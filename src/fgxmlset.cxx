@@ -614,14 +614,20 @@ void set_root_paths( std::string &file)
         if (getcwd(tb,264)) {
             if (*tb) {
                 root_path = tb;
+                if (VERB5) {
+                    SPRTF("%s: getcwd() returned '%s'\n", module, root_path.c_str());
+                }
                 s = root_path;
                 s += PATH_SEP;
                 s += file;
                 file = s;   // set the fully qualified file name
+                if (VERB1) {
+                    SPRTF("%s: Set full qualified file to '%s\n", module, file.c_str());
+                }
             }
         } else {
-            printf("%s: Appears 'getcwd()' FAILED! Paths may be wrong. Try using a fully\n");
-            printf(" qualified file name.\n");
+            SPRTF("%s: Appears 'getcwd()' FAILED! Paths may be wrong. Try using a fully\n", module);
+            SPRTF(" qualified file name.\n");
         }
     }
     vSTG vs = PathSplit(file);
