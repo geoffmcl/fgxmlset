@@ -15,3 +15,6 @@ Release/*
 Win32/*
 *.dir/*
 *.sln
+install_manifest.txt
+
+
