@@ -1,0 +1,10 @@
+CMakeCache.txt
+CMakeFiles/*
+Makefile
+bldlog-1.txt
+cmake_install.cmake
+config.h
+fgxmlset
+libutil_lib.a
+reader1
+
