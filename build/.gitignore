@@ -7,4 +7,11 @@ config.h
 fgxmlset
 libutil_lib.a
 reader1
-
+*.vcxproj
+*.filters
+*.user
+Debug/*
+Release/*
+Win32/*
+*.dir/*
+*.sln
