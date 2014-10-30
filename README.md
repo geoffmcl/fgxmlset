@@ -1,9 +1,23 @@
 fgxmlset project
 ================
 
+Description
+-----------
+
 This small project was to explore the <a href="http://www.xmlsoft.org/"
 target="_blank">libXml2</a> UI, and building 
 from source requires finding libXml2 in your system.
+
+It is built to *only* handle <a href="http://flightgear.org" target="_blank">FlightGear</a>
+special Aircraft *-set.xml file. And the file should be in the standard fgdata base data 
+directory, since it has some quite special relative path handling. And it *must* find the 
+correct 'root' node name, &lt;PropertyList&gt;
+
+But aside from that it is a reasonable example of how to find and extract specific data 
+from a 'known' xml file.
+
+Building
+--------
 
 The building is using cmake to find libXml2, and generate 
 the desired build files.
@@ -25,6 +39,7 @@ Regards,
 Geoff.  
 20141030  
 
-# eof
+;eof
+
 
 
