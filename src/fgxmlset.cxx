@@ -17,7 +17,12 @@
 #endif /* _MSC_VER */
 #endif /* _WIN32 */
 #include <stdint.h>
+#ifdef _MSC_VER
 #include <libxml/libxml.h>
+#else
+#include <string.h> // for strcmp(), ...
+#include <unistd.h> // getcwd(), ...
+#endif
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
 #include <libxml/parserInternals.h>

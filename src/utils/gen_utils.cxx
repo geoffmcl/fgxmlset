@@ -16,6 +16,10 @@
 #include <string>
 #include <stdint.h>
 #include <libxml/xmlreader.h>
+#ifndef _MSC_VER
+#include <string.h> // for strlen(), ...
+#include <sys/time.h> // got gettimeofday(), ..
+#endif
 #if (defined(WIN32) && defined(USE_PERF_COUNTER))
 #include <Windows.h>
 #endif
