@@ -126,6 +126,12 @@ vSTG PathSplit( std::string &path )
     return result;
 }
 
+////////////////////////////////////////////////////////////////
+// unix fix 
+// when given like /media/path/file.xml
+// the PathSplit correctly add a 'blank' to the vector, so added a 
+// small fix to make sure a path separator gets add at the beginning
+//
 std::string get_path_only( std::string &file )
 {
     std::string path;
@@ -134,7 +140,7 @@ std::string get_path_only( std::string &file )
     if (max)
         max--;
     for (ii = 0; ii < max; ii++) {
-        if (path.size())
+        if (path.size() || ii)
             path += PATH_SEP;
         path += vs[ii];
     }

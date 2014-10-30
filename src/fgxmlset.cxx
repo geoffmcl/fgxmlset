@@ -757,7 +757,7 @@ int parse_args( int argc, char **argv )
 #if 0 // 0000000000000000000000000000000000000000000000
 void test_stg()
 {
-    std::string path = filename;
+    std::string path ="/media/Disk2/ufo-set.txt";
     ensure_unix_sep(path);
     vSTG vs = PathSplit(path);
     std::string file = get_file_only(path);
@@ -769,6 +769,7 @@ void test_stg()
 // main() OS entry
 int main( int argc, char **argv )
 {
+    // test_stg();
     int iret = parse_args(argc,argv);
     if (iret)
         return iret;
@@ -782,7 +783,6 @@ int main( int argc, char **argv )
     }
     bytes_processed += get_last_file_size();
     LIBXML_TEST_VERSION
-    // test_stg();
     doc = xmlReadFile(main_file.c_str(), NULL, options);
     if (doc == NULL) {
         SPRTF("%s: Failed to load file '%s'\n", module, main_file.c_str() );
