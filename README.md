@@ -29,10 +29,10 @@ $ make
 $ [sudo] make install (if desired)  
 
 For Windows, use the cmake GUI and set source directory, the binary directory to build, or 
-> cd build  
-> cmake .. [-DCMAKE_INSTALL_PREFIX]  
-> cmake --build . --config Release
-> cmake --build . --config Release --target INSTALL (if desired)  
+&gt; cd build  
+&gt; cmake .. [-DCMAKE_INSTALL_PREFIX]  
+&gt; cmake --build . --config Release
+&gt; cmake --build . --config Release --target INSTALL (if desired)  
 
 
 Regards,  
