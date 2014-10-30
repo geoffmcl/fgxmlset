@@ -16,5 +16,8 @@ Win32/*
 *.dir/*
 *.sln
 install_manifest.txt
-
+*.sdf
+*.opensdf
+*.suo
+ipch/*
 
