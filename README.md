@@ -8,9 +8,9 @@ This small project was to explore the <a href="http://www.xmlsoft.org/"
 target="_blank">libXml2</a> UI, and building 
 from source requires finding libXml2 in your system.
 
-It is built to *only* handle <a href="http://flightgear.org" target="_blank">FlightGear</a>
-special Aircraft *-set.xml file. And the file should be in the standard fgdata base data 
-directory, since it has some quite special relative path handling. And it *must* find the 
+It is built to _only_ handle <a href="http://flightgear.org" target="_blank">FlightGear</a>
+special Aircraft ...-set.xml file. And the file should be in the standard fgdata base data 
+directory, since it has some quite special relative path handling. And it _must_ find the 
 correct 'root' node name, &lt;PropertyList&gt;
 
 But aside from that it is a reasonable example of how to find and extract specific data 
@@ -29,6 +29,7 @@ $ make
 $ [sudo] make install (if desired)  
 
 For Windows, use the cmake GUI and set source directory, the binary directory to build, or 
+
 &gt; cd build  
 &gt; cmake .. [-DCMAKE_INSTALL_PREFIX]  
 &gt; cmake --build . --config Release  
