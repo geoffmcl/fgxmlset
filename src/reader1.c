@@ -13,6 +13,9 @@
  */
 
 #include <stdio.h>
+#ifndef _MSC_VER
+#include <string.h> // strdup(), ...
+#endif
 #if defined (_WIN32) && !defined(__CYGWIN__)
 #if defined (_MSC_VER) || defined(__BORLANDC__)
 #include <winsock2.h>
