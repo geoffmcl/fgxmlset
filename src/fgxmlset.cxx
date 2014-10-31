@@ -7,6 +7,7 @@
 \*/
 
 #include <stdio.h>
+#include <sstream>
 #if defined (_WIN32) && !defined(__CYGWIN__)
 #if defined (_MSC_VER) || defined(__BORLANDC__)
 #include <winsock2.h>
@@ -62,7 +63,7 @@
 #include "fgxmlset.hxx"
 
 #ifndef DEF_VERB
-#define DEF_VERB 0
+#define DEF_VERB 1
 //#define DEF_VERB 9
 #endif
 
@@ -82,6 +83,8 @@ static const char *ac_folder = "Aircraft";
 static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
 //static const char *filename = "X:\\fgdata\\Aircraft\\ufo\\ufo-set.xml";
 //static const char *filename = "ufo-set.xml";
+static char *out_file = 0;
+
 static std::string root_path;
 static std::string ac_path;
 static int scanned_count = 0;
@@ -207,42 +210,63 @@ bool has_no_excluded_folders(std::string &path)
 }
 
 PFLGITEMS pflgitems = 0;
+#define MEOL std::endl
 
 void show_items_found()
 {
     if (!pflgitems)
         return;
     size_t ii, max = pflgitems->acpaths.size();
-    SPRTF("\n");
-    SPRTF("%s: Processed the main file '%s'\n", module, main_file.c_str());
-    SPRTF("%s: Items found in scan of %d xml file(s), %s bytes... in %s\n", module, scanned_count, 
-        nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed)),
-        get_seconds_stg(get_seconds() - bgn_secs) );
+    std::stringstream ss;
+
+    ss << module << ": Processed the main file '" << main_file << MEOL;
+    ss << "Items found in scan of " << scanned_count << " xml file(s), " << nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed));
+    ss << " bytes, in " << get_seconds_stg(get_seconds() - bgn_secs) << MEOL;
 
     if (pflgitems->authors.size())
-        SPRTF("author(s)       : %s\n", pflgitems->authors.c_str());
+        ss << "author(s)       : " << pflgitems->authors << MEOL;
     if (pflgitems->status.size())
-        SPRTF("status          : %s\n", pflgitems->status.c_str());
+        ss << "status          : " << pflgitems->status << MEOL;
     if (pflgitems->rFDMr.size())
-        SPRTF("rating FDM      : %s\n", pflgitems->rFDMr.c_str());
+        ss << "rating FDM      : " << pflgitems->rFDMr << MEOL;
     if (pflgitems->rsystems.size())
-        SPRTF("rating systems  : %s\n", pflgitems->rsystems.c_str());
+        ss << "rating systems  : " << pflgitems->rsystems << MEOL;
     if (pflgitems->rcockpit.size())
-        SPRTF("rating cockpit  : %s\n", pflgitems->rcockpit.c_str());
+        ss << "rating cockpit  : " << pflgitems->rcockpit << MEOL;
     if (pflgitems->rmodel.size())
-        SPRTF("rating model    : %s\n", pflgitems->rmodel.c_str());
+        ss << "rating model    : " << pflgitems->rmodel << MEOL;
     if (pflgitems->avers.size())
-        SPRTF("aircarft-version: %s\n", pflgitems->avers.c_str());
+        ss << "aircarft-version: " << pflgitems->avers << MEOL;
     if (pflgitems->fmodel.size())
-        SPRTF("flight-model    : %s\n", pflgitems->fmodel.c_str());
+        ss << "flight-model    : " << pflgitems->fmodel << MEOL;
     if (max) {
         if (max == 1) {
-            SPRTF("model-file      : %s\n", pflgitems->acpaths[0].c_str());
+            ss << "model-file      : " << pflgitems->acpaths[0] << MEOL;
         } else {
-            SPRTF("Got %d 'model' files...\n", (int)max );
+            ss << "Got " << max << " 'model' files..." << MEOL;
             for (ii = 0; ii < max; ii++) {
-                SPRTF("%d: %s\n", (int)(ii + 1), pflgitems->acpaths[ii].c_str());
+                ss << (ii + 1) << ": " << pflgitems->acpaths[ii] << MEOL;
             }
+        }
+    }
+    if (VERB1) {
+        if (VERB2)
+            SPRTF("\n");
+        SPRTF("%s", ss.str().c_str());
+    }
+    if (out_file) {
+        FILE *fp = fopen(out_file,"w");
+        if (fp) {
+            size_t res, len = ss.str().size();
+            res = fwrite(ss.str().c_str(),1,len,fp);
+            fclose(fp);
+            if (res == len) {
+                SPRTF("%s: Results witten to file '%s'\n", module, out_file);
+            } else {
+                SPRTF("WARNING: Write to file '%s' failed! req %d, wrote %d\n", out_file, (int)len, (int)res);
+            }
+        } else {
+            SPRTF("WARNING: Unable to Write to file '%s'!\n", out_file);
         }
     }
 
@@ -661,6 +685,8 @@ void give_help( char *name )
     printf(" --help (-h or -?) = This help and exit(2)\n");
     printf(" --verb[nn]        = Bump or set verbosity. (def=%d)\n", verbosity);
     printf(" --log <file>      = Set the log file to be used for output. (def=%s)\n", get_log_file());
+    printf(" --out <file>      = Write results to out file. (def=%s)\n",
+        out_file ? out_file : "none");
     printf("\n");
     printf("Will parse the input as a FlightGear '-set' xml file, and extract information.\n");
     printf("While there is an attempt to handle a relative file name, it is certainly better\n");
@@ -709,12 +735,13 @@ int scan_for_log_file( int argc, char **argv )
 int parse_args( int argc, char **argv )
 {
     int c, i;
-    // int i2;
+    int i2;
     char *arg, *sarg;
     if (scan_for_log_file(argc,argv))
         return 1;
     for (i = 1; i < argc; i++) {
         arg = argv[i];
+        i2 = i + 1;
         if (*arg == '-') {
             sarg = &arg[1];
             while (*sarg == '-')
@@ -728,6 +755,16 @@ int parse_args( int argc, char **argv )
                 break;
             case 'l':
                 i++;    // already checked an dealt with
+                break;
+            case 'o':
+                if (i2 < argc) {
+                    i++;
+                    sarg = argv[i];
+                    out_file = strdup(sarg);
+                } else {
+                    SPRTF("%s: Expected output file name to follow '%s'! Aborting...\n", module, arg);
+                    return 1;
+                }
                 break;
             case 'v':
                 sarg++;
@@ -793,7 +830,7 @@ int main( int argc, char **argv )
         return 1;
     }
     if (VERB1) {
-        SPRTF("%s: Loaded file '%s'\n", module, main_file.c_str() );
+        SPRTF("%s: Processing file '%s'...\n", module, main_file.c_str() );
     }
     if (check_doc(doc)) {
         xmlCleanupParser();    // Free globals
