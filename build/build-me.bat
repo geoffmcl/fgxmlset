@@ -12,6 +12,8 @@
 
 @set TMPOPTS=-DCMAKE_INSTALL_PREFIX=%TMPDRV%\FG\18\3rdParty
 
+@call chkmsvc %TMPPRJ%
+
 :RPT
 @if "%~1x" == "x" goto GOTCMD
 @set TMPOPTS=%TMPOPTS% %1
@@ -43,7 +45,8 @@ cmake --build . --config Release >> %TMPLOG% 2>&1
 
 @call elapsed %TMPBGN%
 
-@ echo No install at this time... 
+@echo No cmake install at this time... 
+@echo Maybe use instexe.bat after setting install location...
 @echo.
 @REM stop here
 @goto END
