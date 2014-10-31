@@ -74,6 +74,7 @@
 // forward refs
 static void walkDoc(xmlDocPtr doc, int lev, const char *file);
 int check_doc( xmlDocPtr doc );
+void set_full_path( std::string &file);
 
 static std::string main_file;
 static vSTG loaded_files;
@@ -635,10 +636,8 @@ int check_doc( xmlDocPtr doc )
     return 0;
 }
 
-// try to always get the full path if given a relative file
-void set_root_paths( std::string &file)
+void set_full_path( std::string &file)
 {
-    std::string s;
     char *tb = GetNxtBuf();
 #ifdef WIN32
     if (_fullpath(tb,file.c_str(),MX_ONE_BUF) != NULL) {
@@ -659,6 +658,13 @@ void set_root_paths( std::string &file)
         file = tb;
     }
 #endif
+}
+
+// try to always get the full path if given a relative file
+void set_root_paths( std::string &file)
+{
+    std::string s;
+    set_full_path(file);
     root_path = get_path_only(file);
     vSTG vs = PathSplit(file);
     size_t ii,max = vs.size();
@@ -683,7 +689,7 @@ void give_help( char *name )
     printf("Options:\n");
     printf(" --help (-h or -?) = This help and exit(2)\n");
     printf(" --verb[nn]        = Bump or set verbosity. (def=%d)\n", verbosity);
-    printf(" --log <file>      = Set the log file to be used for output. (def=%s)\n", get_log_file());
+    printf(" --log <file>      = Set the log file for output.  Use 'none' to disable. (def=%s)\n", get_log_file());
     printf(" --out <file>      = Write results to out file. (def=%s)\n",
         out_file ? out_file : "none");
     printf("\n");
@@ -705,8 +711,43 @@ void give_help( char *name )
 int scan_for_log_file( int argc, char **argv )
 {
     int c, i;
-    int i2;
+    int i2 = 1;
     char *arg, *sarg;
+    std::string file;
+    // set a log file per the exe path
+    char *tb;
+    int res;
+#ifdef WIN32
+    tb = GetNxtBuf();
+    *tb = 0;
+    res = GetModuleFileName(NULL,tb,MX_ONE_BUF);
+    file = tb;
+#else
+    arg = argv[0];
+    if (*arg == '/') {
+        file = arg;
+    } else {
+        tb = GetNxtBuf();
+        *tb = 0;
+        int res = readlink("/proc/self/exe",tb,MX_ONE_BUF);
+        if ((res > 0)&&(*tb)) {
+            tb[res] = 0;
+            file = tb;
+        } else {
+            file = argv[0];
+        }
+    }
+#endif
+    if (i2) printf("runtime: %s\n", file.c_str());
+    file = get_path_only(file);
+    if (i2) printf("path   : %s\n", file.c_str());
+    file += PATH_SEP;
+    file += "tempfgxml.txt";
+    if (i2) printf("file   : %s\n", file.c_str());
+    set_full_path(file);
+    if (i2) printf("full   : %s\n", file.c_str());
+    set_log_file((char *)file.c_str(),false);
+
     for (i = 1; i < argc; i++) {
         i2 = i + 1;
         arg = argv[i];
@@ -790,6 +831,9 @@ int parse_args( int argc, char **argv )
             filename = strdup(arg);
         }
 
+    }
+    if (VERB5) {
+        SPRTF("%s: Log file is '%s'\n", module, get_log_file());
     }
     return 0;
 }
