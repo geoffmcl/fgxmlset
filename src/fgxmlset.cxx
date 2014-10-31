@@ -666,11 +666,9 @@ void set_root_paths( std::string &file)
             if (strcmp(s.c_str(),ac_folder) == 0) {
                 break;
             }
-            if (s.size()) {
-                if (ac_path.size())
-                    ac_path += PATH_SEP;
-                ac_path += s;
-            }
+            if (ac_path.size() || ii)
+                ac_path += PATH_SEP;
+            ac_path += s;
         }
     } 
 
