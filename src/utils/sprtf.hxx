@@ -36,6 +36,13 @@ extern "C" {
 #define MCDECL
 #endif
 
+#ifndef MX_ONE_BUF
+#define MX_ONE_BUF 2048
+#endif
+#ifndef MX_BUFFERS
+#define MX_BUFFERS 1024
+#endif
+
 extern int add_std_out( int val );
 extern int add_sys_time( int val ); // add time string
 extern int add_screen_out( int val );

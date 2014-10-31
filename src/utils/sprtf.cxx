@@ -47,13 +47,6 @@
 #define strcmpi strcasecmp
 #endif 
 
-#ifndef MX_ONE_BUF
-#define MX_ONE_BUF 2048
-#endif
-#ifndef MX_BUFFERS
-#define MX_BUFFERS 1024
-#endif
-
 static char _s_strbufs[MX_ONE_BUF * MX_BUFFERS];
 static int iNextBuf = 0;
 
