@@ -79,9 +79,9 @@ static const char *module = "fgxmlset";
 static int options = XML_PARSE_COMPACT | XML_PARSE_BIG_LINES;
 static const char *root_node = "PropertyList";
 static const char *ac_folder = "Aircraft";
-//static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
+static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
 //static const char *filename = "X:\\fgdata\\Aircraft\\ufo\\ufo-set.xml";
-static const char *filename = "ufo-set.xml";
+//static const char *filename = "ufo-set.xml";
 static std::string root_path;
 static std::string ac_path;
 static int scanned_count = 0;
@@ -236,9 +236,13 @@ void show_items_found()
     if (pflgitems->fmodel.size())
         SPRTF("flight-model    : %s\n", pflgitems->fmodel.c_str());
     if (max) {
-        SPRTF("Got %d 'model' file(s)...\n", (int)max );
-        for (ii = 0; ii < max; ii++) {
-            SPRTF("%d: %s\n", (int)(ii + 1), pflgitems->acpaths[ii].c_str());
+        if (max == 1) {
+            SPRTF("model-file      : %s\n", pflgitems->acpaths[0].c_str());
+        } else {
+            SPRTF("Got %d 'model' files...\n", (int)max );
+            for (ii = 0; ii < max; ii++) {
+                SPRTF("%d: %s\n", (int)(ii + 1), pflgitems->acpaths[ii].c_str());
+            }
         }
     }
 
