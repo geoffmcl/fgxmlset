@@ -640,9 +640,15 @@ void set_root_paths( std::string &file)
 {
     std::string s;
     char *tb = GetNxtBuf();
+#ifdef WIN32
     if (_fullpath(tb,file.c_str(),MX_ONE_BUF) != NULL) {
         file = tb;
     }
+#else
+    if (realpath(file.c_str(),tb) != NULL) {
+        file = tb;
+    }
+#endif
     root_path = get_path_only(file);
     vSTG vs = PathSplit(file);
     size_t ii,max = vs.size();
