@@ -685,6 +685,7 @@ void give_help( char *name )
 {
     std::string file = name;
     file = get_file_only(file);
+    printf("\n");
     printf("%s [options] input-fg-xml-set-file\n", file.c_str());
     printf("Options:\n");
     printf(" --help (-h or -?) = This help and exit(2)\n");
@@ -703,7 +704,7 @@ void give_help( char *name )
     printf("\n");
     printf("But in general terms it could be taken as a reasonable example of how to\n");
     printf("extract information from any xml file using the services of libXml2.\n");
-    
+    printf("\n");
 }
 
 #define ISDIGIT(a) (( a >= '0' ) && ( a <= '9' ))
@@ -711,7 +712,7 @@ void give_help( char *name )
 int scan_for_log_file( int argc, char **argv )
 {
     int c, i;
-    int i2 = 1;
+    int i2 = 0;
     char *arg, *sarg;
     std::string file;
     // set a log file per the exe path
@@ -729,7 +730,7 @@ int scan_for_log_file( int argc, char **argv )
     } else {
         tb = GetNxtBuf();
         *tb = 0;
-        int res = readlink("/proc/self/exe",tb,MX_ONE_BUF);
+        res = readlink("/proc/self/exe",tb,MX_ONE_BUF);
         if ((res > 0)&&(*tb)) {
             tb[res] = 0;
             file = tb;
