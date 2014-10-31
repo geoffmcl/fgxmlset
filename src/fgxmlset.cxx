@@ -642,10 +642,20 @@ void set_root_paths( std::string &file)
     char *tb = GetNxtBuf();
 #ifdef WIN32
     if (_fullpath(tb,file.c_str(),MX_ONE_BUF) != NULL) {
+        if (VERB5) {
+            if (strcmp(tb,file.c_str())) {
+                SPRTF("%s: Relative path '%s' modified to full path '%s'\n", module, file.c_str(), tb);
+            }
+        }
         file = tb;
     }
 #else
     if (realpath(file.c_str(),tb) != NULL) {
+        if (VERB5) {
+            if (strcmp(tb,file.c_str())) {
+                SPRTF("%s: Relative path '%s' modified to full path '%s'\n", module, file.c_str(), tb);
+            }
+        }
         file = tb;
     }
 #endif
@@ -663,7 +673,6 @@ void set_root_paths( std::string &file)
             ac_path += s;
         }
     } 
-
 }
 
 void give_help( char *name )
