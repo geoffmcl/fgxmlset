@@ -7,6 +7,7 @@
 \*/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <sstream>
 #if defined (_WIN32) && !defined(__CYGWIN__)
 #if defined (_MSC_VER) || defined(__BORLANDC__)
@@ -634,32 +635,15 @@ int check_doc( xmlDocPtr doc )
     return 0;
 }
 
+// try to always get the full path if given a relative file
 void set_root_paths( std::string &file)
 {
     std::string s;
-    root_path = get_path_only(file);
-    if (root_path.size() == 0) {
-        char *tb = GetNxtBuf();
-        *tb = 0;
-        if (getcwd(tb,264)) {
-            if (*tb) {
-                root_path = tb;
-                if (VERB5) {
-                    SPRTF("%s: getcwd() returned '%s'\n", module, root_path.c_str());
-                }
-                s = root_path;
-                s += PATH_SEP;
-                s += file;
-                file = s;   // set the fully qualified file name
-                if (VERB1) {
-                    SPRTF("%s: Set full qualified file to '%s\n", module, file.c_str());
-                }
-            }
-        } else {
-            SPRTF("%s: Appears 'getcwd()' FAILED! Paths may be wrong. Try using a fully\n", module);
-            SPRTF(" qualified file name.\n");
-        }
+    char *tb = GetNxtBuf();
+    if (_fullpath(tb,file.c_str(),MX_ONE_BUF) != NULL) {
+        file = tb;
     }
+    root_path = get_path_only(file);
     vSTG vs = PathSplit(file);
     size_t ii,max = vs.size();
     if (max > 1) {
@@ -816,8 +800,10 @@ int main( int argc, char **argv )
         return iret;
     xmlDocPtr doc = NULL;
     bgn_secs = get_seconds();
+    // establish the MAIN file
     main_file = filename;
     ensure_native_sep(main_file);
+    set_root_paths(main_file);
     if (is_file_or_directory(main_file.c_str()) != 1) {
         SPRTF("%s: Failed to 'stat' file '%s'\n", module, main_file.c_str() );
         return 1;
@@ -837,7 +823,6 @@ int main( int argc, char **argv )
         return 1;
     }
 
-    set_root_paths(main_file);
     scanned_count++;
     loaded_files.push_back(main_file);
     walkDoc(doc, 0, main_file.c_str());
