@@ -30,7 +30,7 @@ extern int is_file_or_directory ( const char * path ); // 1 = file, 2 = dir, 0 =
 extern size_t get_last_file_size();
 extern char *get_seconds_stg( double dsecs );
 extern double get_seconds();
-extern char *uint64_to_stg( uint64_t val );
+extern char *uint64_to_stg( unsigned long long val );
 extern char *nice_num( char * dst, char * src );
 
 

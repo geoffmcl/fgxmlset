@@ -570,11 +570,12 @@ static void walkDoc(xmlDocPtr doc, int lev, const char *file )
 {
     xmlTextReaderPtr reader;
     int ret = -1;
-
+    int node_cnt = 0;
+#if 0 // 0000000000000000000000000000000000
 #ifdef LIBXML_PATTERN_ENABLED
     xmlNodePtr root;
     const xmlChar *namespaces[22];
-    int i, node_cnt = 0;
+    int i;
     xmlNsPtr ns;
 
     root = xmlDocGetRootElement(doc);
@@ -584,8 +585,9 @@ static void walkDoc(xmlDocPtr doc, int lev, const char *file )
     }
     namespaces[i++] = NULL;
     namespaces[i] = NULL;
-
 #endif /* LIBXML_PATTERN_ENABLED */
+#endif // 000000000000000000000000000000000
+
     reader = xmlReaderWalker(doc);
     if (reader != NULL) {
 	    //if ((timing) && (!repeat)) {
@@ -609,7 +611,7 @@ static void walkDoc(xmlDocPtr doc, int lev, const char *file )
     }
     if (ret == 0) {
         if (VERB5)
-            SPRTF("%s: Done file '%s'\n\n", module, file );
+            SPRTF("%s: Done file '%s', %d nodes...\n\n", module, file, node_cnt );
     }
 }
 
@@ -678,7 +680,7 @@ void give_help( char *name )
 {
     std::string file = name;
     file = get_file_only(file);
-    printf("%s [options] input-fg-xml-set-file\n");
+    printf("%s [options] input-fg-xml-set-file\n", file.c_str());
     printf("Options:\n");
     printf(" --help (-h or -?) = This help and exit(2)\n");
     printf(" --verb[nn]        = Bump or set verbosity. (def=%d)\n", verbosity);

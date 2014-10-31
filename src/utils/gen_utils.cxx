@@ -277,7 +277,7 @@ char *get_seconds_stg( double dsecs )
 //#define PFX64 PRIu64
 //#endif
 
-char *uint64_to_stg( uint64_t val )
+char *uint64_to_stg( unsigned long long val )
 {
     char *nb = GetNxtBuf();
     sprintf(nb,"%llu", val);
@@ -316,6 +316,12 @@ char *nice_num( char * dst_buf, char * src ) // get nice number, with commas
    }
    *dst = 0;
    return dst_buf;
+}
+
+// just to avoid gcc warning ‘module’ defined but not used [-Wunused-variable]
+void out_module_name()
+{
+    SPRTF("%s",module);
 }
 
 // eof = gen_utils.cxx
