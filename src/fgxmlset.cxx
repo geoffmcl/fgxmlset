@@ -88,10 +88,14 @@ static const char *module = "fgxmlset";
 static int options = XML_PARSE_COMPACT | XML_PARSE_BIG_LINES;
 static const char *root_node = "PropertyList";
 static const char *ac_folder = "Aircraft";
+#ifdef NDEBUG
+static const char *filename = 0;
+#else
 //static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
 //static const char *filename = "X:\\fgdata\\Aircraft\\ufo\\ufo-set.xml";
 //static const char *filename = "ufo-set.xml";
 static const char *filename = "X:\\fgdata\\Aircraft\\A320-family\\A320-231-set.xml";
+#endif
 static char *out_file = 0;
 
 static std::string root_path;
@@ -830,20 +834,21 @@ void give_help( char *name )
     file = get_file_only(file);
     printf("\n");
     printf("%s [options] input-fg-xml-set-file\n", file.c_str());
+    printf("\n");
     printf("Options:\n");
     printf(" --help (-h or -?) = This help and exit(2)\n");
-    printf(" --verb[nn]        = Bump or set verbosity. (def=%d)\n", verbosity);
-    printf(" --log <file>      = Set the log file for output.  Use 'none' to disable. (def=%s)\n", get_log_file());
-    printf(" --out <file>      = Write results to out file. (def=%s)\n",
+    printf(" --verb[nn]   (-v) = Bump or set verbosity. (def=%d)\n", verbosity);
+    printf(" --log <file> (-l) = Set the log file for output.  Use 'none' to disable.\n (def=%s)\n", get_log_file());
+    printf(" --out <file> (-o) = Write results to out file. (def=%s)\n",
         out_file ? out_file : "none");
     printf("\n");
-    printf("Will parse the input as a FlightGear '-set' xml file, and extract information.\n");
-    printf("While there is an attempt to handle a relative file name, it is certainly better\n");
+    printf("Will parse the input as a FlightGear 'xxx-set' xml file, and extract information.\n");
+    printf("While there is a good attempt to handle a relative file name, it is certainly better\n");
     printf("to use a fully qualified input file name.\n");
     printf("\n");
-    printf("NOTE: This will ONLY work for FlightGear Aircraft '-set.xml' files that are\n");
+    printf("NOTE: This may ONLY work for FlightGear Aircraft 'xxx-set.xml' files that are\n");
     printf("      in the fgdata folder since there are some very FG specific relative\n");
-    printf("      paths applied.\n");
+    printf("      paths applied to some.\n");
     printf("\n");
     printf("But in general terms it could be taken as a reasonable example of how to\n");
     printf("extract information from any xml file using the services of libXml2.\n");
@@ -935,7 +940,7 @@ int parse_args( int argc, char **argv )
             case 'h':
             case '?':
                 give_help(argv[0]);
-                return 1;
+                return 2;
                 break;
             case 'l':
                 i++;    // already checked an dealt with
@@ -978,6 +983,11 @@ int parse_args( int argc, char **argv )
     }
     if (VERB5) {
         SPRTF("%s: Log file is '%s'\n", module, get_log_file());
+    }
+    if (!filename) {
+        give_help(argv[0]);
+        SPRTF("%s: ERROR: No input file found in command! Aborting...\n", module);
+        return 1;
     }
     return 0;
 }
