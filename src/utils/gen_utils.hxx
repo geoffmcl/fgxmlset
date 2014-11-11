@@ -40,6 +40,8 @@ extern void ensure_win_sep( std::string &path );
 extern void ensure_unix_sep( std::string &path );
 extern void ensure_native_sep( std::string &path );
 extern int find_extension(std::string &file, const char *ext);
+extern void fix_relative_path( std::string &path );
+
 #endif // #ifdef __cplusplus
 
 #ifdef __cplusplus

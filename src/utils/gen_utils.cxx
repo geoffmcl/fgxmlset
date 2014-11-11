@@ -126,6 +126,38 @@ vSTG PathSplit( std::string &path )
     return result;
 }
 
+void fix_relative_path( std::string &path )
+{
+    vSTG vs = PathSplit(path);
+    size_t ii, max = vs.size();
+    std::string npath, tmp;
+    vSTG n;
+    for (ii = 0; ii < max; ii++) {
+        tmp = vs[ii];
+        if (tmp == ".")
+            continue;
+        if (tmp == "..") {
+            if (n.size()) {
+                n.pop_back();
+                continue;
+            }
+            return;
+        }
+        n.push_back(tmp);
+    }
+    ii = n.size();
+    if (ii && (ii != max)) {
+        max = ii;
+        for (ii = 0; ii < max; ii++) {
+            tmp = n[ii];
+            if (npath.size())
+                npath += PATH_SEP;
+            npath += tmp;
+        }
+        path = npath;
+    }
+}
+
 ////////////////////////////////////////////////////////////////
 // unix fix 
 // when given like /media/path/file.xml

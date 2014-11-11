@@ -485,6 +485,7 @@ int save_text_per_flag( char *value, std::string &mfile, const char *file )
                         tmp += PATH_SEP;
                         tmp += (char *)value;
                         ensure_native_sep(tmp);
+                        fix_relative_path(tmp);
                         if (is_file_or_directory(tmp.c_str()) == 1) {
                             // store this as the .ac file
                             pflgitems->acpaths.push_back(tmp);
