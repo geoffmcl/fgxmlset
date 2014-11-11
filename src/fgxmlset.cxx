@@ -88,14 +88,11 @@ static const char *module = "fgxmlset";
 static int options = XML_PARSE_COMPACT | XML_PARSE_BIG_LINES;
 static const char *root_node = "PropertyList";
 static const char *ac_folder = "Aircraft";
-#ifdef NDEBUG
 static const char *filename = 0;
-#else
 //static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
 //static const char *filename = "X:\\fgdata\\Aircraft\\ufo\\ufo-set.xml";
 //static const char *filename = "ufo-set.xml";
-static const char *filename = "X:\\fgdata\\Aircraft\\A320-family\\A320-231-set.xml";
-#endif
+//static const char *filename = "X:\\fgdata\\Aircraft\\A320-family\\A320-231-set.xml";
 static char *out_file = 0;
 
 static std::string root_path;
