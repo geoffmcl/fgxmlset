@@ -78,13 +78,20 @@ void set_full_path( std::string &file);
 
 static std::string main_file;
 static vSTG loaded_files;
+// NOTE: This are parallel lists
+////////////////////////////////
+static vSTG all_ac_files;
+static vSTG all_ac_xml;
+////////////////////////////////
+static std::string loaded_file;
 static const char *module = "fgxmlset";
 static int options = XML_PARSE_COMPACT | XML_PARSE_BIG_LINES;
 static const char *root_node = "PropertyList";
 static const char *ac_folder = "Aircraft";
-static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
+//static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
 //static const char *filename = "X:\\fgdata\\Aircraft\\ufo\\ufo-set.xml";
 //static const char *filename = "ufo-set.xml";
+static const char *filename = "X:\\fgdata\\Aircraft\\A320-family\\A320-231-set.xml";
 static char *out_file = 0;
 
 static std::string root_path;
@@ -93,6 +100,37 @@ static int scanned_count = 0;
 static double bgn_secs;
 static uint64_t bytes_processed = 0;
 static int verbosity = DEF_VERB;
+static char *last_name = 0; // last name
+static char *active_name = 0; // active name
+// last loaded file components
+static char *last_file = 0;
+static char *last_path = 0;
+
+void set_last_components( std::string &file )
+{
+    std::string name = get_file_only(file);
+    std::string path = get_path_only(file);
+    if (name.size()) {
+        if (last_file) {
+            if (strcmp(last_file,name.c_str())) {
+                free(last_file);
+                last_file = strdup(name.c_str());
+            }
+        } else {
+            last_file = strdup(name.c_str());
+        }
+    }
+    if (path.size()) {
+        if (last_path) {
+            if (strcmp(last_path,path.c_str())) {
+                free(last_path);
+                last_path = strdup(path.c_str());
+            }
+        } else {
+            last_path = strdup(path.c_str());
+        }
+    }
+}
 
 #define VERB1 (verbosity >= 1)
 #define VERB2 (verbosity >= 2)
@@ -113,6 +151,8 @@ static int parsing_flag = 0;
 #define flg_avers       0x00000100
 #define flg_fmodel      0x00000200
 #define flg_path        0x00000400
+#define flg_aero        0x00000800
+#define flg_desc        0x00001000
 
 typedef struct tagFLGITEMS {
     std::string authors;
@@ -123,6 +163,8 @@ typedef struct tagFLGITEMS {
     std::string rmodel;
     std::string avers;
     std::string fmodel;
+    std::string desc;
+    std::string aero;
     vSTG acpaths;
 }FLGITEMS, *PFLGITEMS;
 
@@ -143,6 +185,8 @@ static FLG2TXT flg2txt[] = {
     { flg_avers, "aircraft-version" },   //       0x00000100
     { flg_fmodel, "flight-model" }, //      0x00000200
     { flg_path, "path" },   // 0x00000400
+    { flg_aero, "aero" },   // 0x00000400
+    { flg_desc, "description" }, // 0x00001000
     // last entry
     { 0, 0 }
 };
@@ -155,6 +199,8 @@ static int simrcockpit  = (flg_sim | flg_rating | flg_rcockpit);
 static int simrmodel  = (flg_sim | flg_rating | flg_rmodel);
 static int simavers  = (flg_sim | flg_avers);
 static int simfmod  = (flg_sim | flg_fmodel);
+static int simaero  = (flg_sim | flg_aero);
+static int simdesc  = (flg_sim | flg_desc);
 
 static int simmodpath = flg_path;
 //static int simmodpath = (flg_sim | flg_path);
@@ -221,10 +267,51 @@ void show_items_found()
     size_t ii, max = pflgitems->acpaths.size();
     std::stringstream ss;
 
+    if (VERB5) {
+        std::string s;
+        max = all_ac_files.size();
+        SPRTF("\n");
+        SPRTF("%s: ac files seen %d...\n", module, (int)max );
+        if (max == all_ac_xml.size()) {
+            for (ii = 0; ii < max; ii++) {
+                s = all_ac_xml[ii];
+                s = get_path_only(s);
+                s += PATH_SEP;
+                s += all_ac_files[ii];
+                if (is_file_or_directory(s.c_str()) == 1) {
+                    // found the file, so
+                    SPRTF("%s\n", s.c_str());
+                } else {
+                    s = all_ac_files[ii];
+                    SPRTF("%s in ", s.c_str());
+                    SPRTF("%s\n", all_ac_xml[ii].c_str()); 
+                }
+            }
+        } else {
+            // Drat can only show this file
+            for (ii = 0; ii < max; ii++) {
+                s = all_ac_files[ii];
+                SPRTF("%3d: %s\n", (int)(ii + 1), s.c_str());
+            }
+        }
+        max = loaded_files.size();
+        SPRTF("\n");
+        SPRTF("%s: Loaded %d xml files...\n", module, (int)max );
+        for (ii = 0; ii < max; ii++) {
+            s = loaded_files[ii];
+            SPRTF("%s\n", s.c_str());
+        }
+    }
+
+    max = pflgitems->acpaths.size();
     ss << module << ": Processed the main file '" << main_file << MEOL;
     ss << "Items found in scan of " << scanned_count << " xml file(s), " << nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed));
     ss << " bytes, in " << get_seconds_stg(get_seconds() - bgn_secs) << MEOL;
 
+    if (pflgitems->aero.size())
+        ss << "aero            : " << pflgitems->aero << MEOL;
+    if (pflgitems->desc.size())
+        ss << "decription      : " << pflgitems->desc << MEOL;
     if (pflgitems->authors.size())
         ss << "author(s)       : " << pflgitems->authors << MEOL;
     if (pflgitems->status.size())
@@ -271,6 +358,9 @@ void show_items_found()
             SPRTF("WARNING: Unable to Write to file '%s'!\n", out_file);
         }
     }
+    if (VERB5) {
+        SPRTF("%s: All output written to '%s'\n", module, get_log_file());
+    }
 
     // clean up...
     pflgitems->acpaths.clear();
@@ -306,12 +396,35 @@ bool has_file_path( char * file )
 #define GOT_FLG(a) ((parsing_flag & a) == a)
 
 
+bool Already_Pushed(std::string &file)
+{
+    size_t ii, max = all_ac_files.size();
+    std::string s;
+    for (ii = 0; ii < max; ii++) {
+        s = all_ac_files[ii];
+        if (file == s)
+            return true;
+    }
+    return false;
+}
+
+
 int save_text_per_flag( char *value, std::string &mfile, const char *file )
 {
     int iret = 0;
     if (!value)
         return 0;
     if (parsing_flag & flg_sim) {
+        if (VERB5) {
+            if (active_name && (strcmp(active_name,"path") == 0)) {
+                std::string s = value;
+                if (find_extension(s,".ac") && !Already_Pushed(s)) {
+                    // parallel lists
+                    all_ac_files.push_back(s);
+                    all_ac_xml.push_back(loaded_file);
+                }
+            }
+        }
         if (pflgitems == 0)
             pflgitems = new FLGITEMS;
         if (GOT_FLG(simauthor)) {
@@ -339,6 +452,15 @@ int save_text_per_flag( char *value, std::string &mfile, const char *file )
         if (GOT_FLG(simfmod)) {
             pflgitems->fmodel = value;
         }
+        if (GOT_FLG(simaero)) {
+            pflgitems->aero = value;
+        }
+        if (GOT_FLG(simdesc)) {
+            if (pflgitems->desc.size() == 0) {
+                // only take in the 'first' decriptions
+                pflgitems->desc = value;
+            }
+        }
         if (GOT_FLG(simmodpath)) {
             // 4 TEXT (3) #text 0 1 0 path=PropertyList\sim\model\path Aircraft/777/Models/777-200.xml
             std::string ifile = ac_path;
@@ -356,8 +478,22 @@ int save_text_per_flag( char *value, std::string &mfile, const char *file )
                 }
             } else if (find_extension(ifile,".xml") || find_extension(ifile,".ac")) {
                 // can NOT find a file we are interested in, give a warning
-                if (has_file_path((char *)value)) { // forget it if it has no path
-                    SPRTF("WARNING: Unable to find the model file '%s'\n", ifile.c_str());
+                if (has_file_path((char *)value)) { // if it has a path
+                    // like 'X:\fgdata\..\Models\a320.fuselage.ac'
+                    if (last_path && find_extension(ifile,".ac")) {
+                        std::string tmp = last_path;
+                        tmp += PATH_SEP;
+                        tmp += (char *)value;
+                        ensure_native_sep(tmp);
+                        if (is_file_or_directory(tmp.c_str()) == 1) {
+                            // store this as the .ac file
+                            pflgitems->acpaths.push_back(tmp);
+                        } else {
+                            SPRTF("WARNING: Unable to find the model file '%s'\nnor '%s'\n", ifile.c_str(), tmp.c_str());
+                        }
+                    } else {
+                        SPRTF("WARNING: Unable to find file '%s'\n", ifile.c_str());
+                    }
                 } else if (find_extension(ifile,".ac") && (pflgitems->acpaths.size() == 0)) {
                     // try REAL HARD to find this file... as the first .ac
                     // maybe it is releative to the current file
@@ -369,7 +505,7 @@ int save_text_per_flag( char *value, std::string &mfile, const char *file )
                         // store this as the .ac file
                         pflgitems->acpaths.push_back(ifile);
                     } else {
-                        SPRTF("WARNING: Unable to find ac file '%s' absolute or ralative!\n", value );
+                        SPRTF("WARNING: Unable to find ac file '%s' absolute or relative!\n", value );
                     }
                 }
             }
@@ -408,6 +544,7 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
     name = xmlTextReaderConstName(reader);
     if (name == NULL)
 	name = BAD_CAST "--";
+    last_name = (char *)name;
     value = xmlTextReaderConstValue(reader);
     attcnt = xmlTextReaderAttributeCount(reader);
     empty = xmlTextReaderIsEmptyElement(reader);
@@ -422,6 +559,7 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
         if (!empty) {
             add_parsing_flag((char *)name );
             xmlpath.push_back((char *)name);
+            active_name = (char *)name;
         }
     } else if (nt == XML_READER_TYPE_END_ELEMENT) {
         remove_parsing_flag((char *)name );
@@ -527,6 +665,8 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                         if (!check_doc(idoc)) {
                             bytes_processed += get_last_file_size();
                             scanned_count++;
+                            loaded_file = s;
+                            set_last_components(s);
                             //path_stack.push_back(path);
                             xmlpath.clear();
                             walkDoc(idoc, lev + 1, s.c_str());
@@ -552,6 +692,8 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                     }
                     if (!check_doc(idoc)) {
                         scanned_count++;
+                        loaded_file = ifile;
+                        set_last_components(ifile);
                         bytes_processed += get_last_file_size();
                         xmlpath.clear();
                         walkDoc(idoc, lev + 1, ifile.c_str());
@@ -885,6 +1027,8 @@ int main( int argc, char **argv )
 
     scanned_count++;
     loaded_files.push_back(main_file);
+    loaded_file = main_file;
+    set_last_components( main_file );
     walkDoc(doc, 0, main_file.c_str());
 
     xmlFreeDoc(doc);       // free document
