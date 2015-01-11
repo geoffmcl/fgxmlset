@@ -305,37 +305,38 @@ void show_items_found()
     }
 
     max = pflgitems->acpaths.size();
-    ss << module << ": Processed the main file '" << main_file << MEOL;
-    ss << "Items found in scan of " << scanned_count << " xml file(s), " << nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed));
+    ss << "# " << module << ": Processed the main file '" << main_file << MEOL;
+    ss << "# Items found in scan of " << scanned_count << " xml file(s), " << nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed));
     ss << " bytes, in " << get_seconds_stg(get_seconds() - bgn_secs) << MEOL;
+    ss << "[model]" << MEOL;
 
     if (pflgitems->aero.size())
-        ss << "aero            : " << pflgitems->aero << MEOL;
+        ss << "aero            = " << pflgitems->aero << MEOL;
     if (pflgitems->desc.size())
-        ss << "decription      : " << pflgitems->desc << MEOL;
+        ss << "decription      = " << pflgitems->desc << MEOL;
     if (pflgitems->authors.size())
-        ss << "author(s)       : " << pflgitems->authors << MEOL;
+        ss << "authors         = " << pflgitems->authors << MEOL;
     if (pflgitems->status.size())
-        ss << "status          : " << pflgitems->status << MEOL;
+        ss << "status          = " << pflgitems->status << MEOL;
     if (pflgitems->rFDMr.size())
-        ss << "rating FDM      : " << pflgitems->rFDMr << MEOL;
+        ss << "rating_FDM      = " << pflgitems->rFDMr << MEOL;
     if (pflgitems->rsystems.size())
-        ss << "rating systems  : " << pflgitems->rsystems << MEOL;
+        ss << "rating_systems  = " << pflgitems->rsystems << MEOL;
     if (pflgitems->rcockpit.size())
-        ss << "rating cockpit  : " << pflgitems->rcockpit << MEOL;
+        ss << "rating_cockpit  = " << pflgitems->rcockpit << MEOL;
     if (pflgitems->rmodel.size())
-        ss << "rating model    : " << pflgitems->rmodel << MEOL;
+        ss << "rating_model    = " << pflgitems->rmodel << MEOL;
     if (pflgitems->avers.size())
-        ss << "aircarft-version: " << pflgitems->avers << MEOL;
+        ss << "aircarft-version= " << pflgitems->avers << MEOL;
     if (pflgitems->fmodel.size())
-        ss << "flight-model    : " << pflgitems->fmodel << MEOL;
+        ss << "flight-model    = " << pflgitems->fmodel << MEOL;
     if (max) {
         if (max == 1) {
-            ss << "model-file      : " << pflgitems->acpaths[0] << MEOL;
+            ss << "model-file      = " << pflgitems->acpaths[0] << MEOL;
         } else {
-            ss << "Got " << max << " 'model' files..." << MEOL;
+            ss << "# Got " << max << " 'model' files..." << MEOL;
             for (ii = 0; ii < max; ii++) {
-                ss << (ii + 1) << ": " << pflgitems->acpaths[ii] << MEOL;
+                ss << "model-file" << (ii + 1) << " = " << pflgitems->acpaths[ii] << MEOL;
             }
         }
     }
