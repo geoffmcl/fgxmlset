@@ -154,6 +154,10 @@ static int parsing_flag = 0;
 #define flg_path        0x00000400
 #define flg_aero        0x00000800
 #define flg_desc        0x00001000
+#define flg_tags        0x00002000
+#define flg_tag         0x00004000
+#define flg_navdb       0x00008000
+#define flg_minrwy      0x00010000
 
 typedef struct tagFLGITEMS {
     std::string authors;
@@ -166,6 +170,8 @@ typedef struct tagFLGITEMS {
     std::string fmodel;
     std::string desc;
     std::string aero;
+    std::string tags;
+    std::string minrwy;
     vSTG acpaths;
 }FLGITEMS, *PFLGITEMS;
 
@@ -188,6 +194,11 @@ static FLG2TXT flg2txt[] = {
     { flg_path, "path" },   // 0x00000400
     { flg_aero, "aero" },   // 0x00000400
     { flg_desc, "description" }, // 0x00001000
+    { flg_tags, "tags" },
+    { flg_tag,  "tag" },
+    { flg_navdb, "navdb" },
+    { flg_minrwy, "min-runway-length-ft" },
+    //////////////////////////////////////
     // last entry
     { 0, 0 }
 };
@@ -202,6 +213,8 @@ static int simavers  = (flg_sim | flg_avers);
 static int simfmod  = (flg_sim | flg_fmodel);
 static int simaero  = (flg_sim | flg_aero);
 static int simdesc  = (flg_sim | flg_desc);
+static int simtags  = (flg_sim | flg_tags | flg_tag);
+static int simminrwy = (flg_sim | flg_navdb | flg_minrwy);
 
 static int simmodpath = flg_path;
 //static int simmodpath = (flg_sim | flg_path);
@@ -313,7 +326,7 @@ void show_items_found()
     if (pflgitems->aero.size())
         ss << "aero            = " << pflgitems->aero << MEOL;
     if (pflgitems->desc.size())
-        ss << "decription      = " << pflgitems->desc << MEOL;
+        ss << "description     = " << pflgitems->desc << MEOL;
     if (pflgitems->authors.size())
         ss << "authors         = " << pflgitems->authors << MEOL;
     if (pflgitems->status.size())
@@ -327,9 +340,14 @@ void show_items_found()
     if (pflgitems->rmodel.size())
         ss << "rating_model    = " << pflgitems->rmodel << MEOL;
     if (pflgitems->avers.size())
-        ss << "aircarft-version= " << pflgitems->avers << MEOL;
+        ss << "aircraft-version= " << pflgitems->avers << MEOL;
     if (pflgitems->fmodel.size())
         ss << "flight-model    = " << pflgitems->fmodel << MEOL;
+    if (pflgitems->tags.size())
+        ss << "tags            = " << pflgitems->tags << MEOL;
+    if (pflgitems->minrwy.size())
+        ss << "min-runway-ft   = " << pflgitems->minrwy << MEOL;
+
     if (max) {
         if (max == 1) {
             ss << "model-file      = " << pflgitems->acpaths[0] << MEOL;
@@ -463,6 +481,16 @@ int save_text_per_flag( char *value, std::string &mfile, const char *file )
                 pflgitems->desc = value;
             }
         }
+        // added 20150111
+        if (GOT_FLG(simtags)) {
+            if (pflgitems->tags.size())
+                pflgitems->tags += ";";
+            pflgitems->tags += value;
+        }
+        if (GOT_FLG(simminrwy)) {
+            pflgitems->minrwy = value;
+        }
+        // =============================
         if (GOT_FLG(simmodpath)) {
             // 4 TEXT (3) #text 0 1 0 path=PropertyList\sim\model\path Aircraft/777/Models/777-200.xml
             std::string ifile = ac_path;
