@@ -540,7 +540,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                         // store this as the .ac file
                         pflgitems->acpaths.push_back(ifile);
                     } else {
-                        SPRTF("WARNING: Unable to find ac file '%s' absolute or relative!\n", value );
+                        SPRTF("WARNING: Unable to find ac file '%s' absolute or relative!\n", value.c_str() );
                     }
                 }
             }
