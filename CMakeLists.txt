@@ -45,19 +45,9 @@ if(WIN32 AND MSVC)
     #    set( MSVC_LD_FLAGS "/FORCE:MULTIPLE" )
     # endif (${MSVC_VERSION} EQUAL 1600)
     #set( NOMINMAX 1 )
-    #if(MINGW)
-        # need to specifically handle rc files, like
-        # resource compilation for mingw
-        #ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/test_rc.o
-        #                   COMMAND windres.exe -I${CMAKE_CURRENT_SOURCE_DIR}
-        #                                       -i${CMAKE_CURRENT_SOURCE_DIR}/test.rc
-        #                                       -o ${CMAKE_CURRENT_BINARY_DIR}/test_rc.o)
-        #SET(test_EXE_SRCS ${test_EXE_SRCS} ${CMAKE_CURRENT_BINARY_DIR}/test_rc.o)
-    #else(MINGW)
-        #SET(test_EXE_SRCS ${test_EXE_SRCS} test.rc)
-    #endif(MINGW)
-#else()
-#    message( FATAL_ERROR "This program can ONLY be compiled in Windows!" )
+    set( CMAKE_DEBUG_POSTFIX "d" )
+else()
+    #  unix things
 endif()
 
 set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS} ${MSVC_FLAGS} -D_REENTRANT" )
@@ -81,6 +71,41 @@ if (LIBXML2_FOUND)
     endif ()
 else ()
     message(FATAL_ERROR "*** LibXML2 NOT FOUND!")
+endif ()
+
+#  ZLIB_FOUND          - True if zlib found.
+#  ZLIB_INCLUDE_DIRS   - where to find zlib.h, etc.
+#  ZLIB_LIBRARIES      - List of libraries when using zlib.
+#  ZLIB_STATICLIB      - List of libraries when using zlibstatic.
+find_package(ZLIB)
+if (ZLIB_FOUND)
+    message(STATUS "*** ZLIB found. inc ${ZLIB_INCLUDE_DIRS} lib ${ZLIB_LIBRARIES}")
+    include_directories( ${ZLIB_INCLUDE_DIRS} )
+    if (ZLIB_STATICLIB)
+        list( APPEND add_LIBS ${ZLIB_STATICLIB} )
+        message(STATUS "*** ZLIB found STATIC lib ${ZLIB_STATICLIB}")        
+    else ()
+        list( APPEND add_LIBS ${ZLIB_LIBRARIES} )
+        add_definitions( -DZLIB_DLL )
+        message(STATUS "*** ZLIB found only SHARED lib - set -DZLIB_DLL")
+    endif ()
+else ()
+    message(STATUS "*** ZLIB not found!")
+endif ()
+
+# SIMGEAR_FOUND, if false, do not try to link to SimGear
+# SIMGEAR_CORE_LIBRARIES, a list of the core static libraries
+# SIMGEAR_LIBRARIES, a list of all the static libraries (core + scene)
+# SIMGEAR_INCLUDE_DIRS, where to find the headers
+find_package(SimGear)
+if (SIMGEAR_FOUND)
+    message(STATUS "*** SimGear FOUND. inc ${SIMGEAR_INCLUDE_DIRS} set -DUSE_SIMGEAR_LIB=1")
+    message(STATUS "*** Lib: core ${SIMGEAR_CORE_LIBRARIES}")
+    include_directories( ${SIMGEAR_INCLUDE_DIRS} )
+    list( APPEND add_LIBS ${SIMGEAR_CORE_LIBRARIES} )
+    add_definitions( -DUSE_SIMGEAR_LIB=1 )
+else ()
+    message(STATUS "*** SimGear NOT FOUND!")
 endif ()
 
 # configuration file, if needed

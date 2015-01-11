@@ -9,8 +9,15 @@
 @set TMPBGN=%TIME%
 @set TMPINS=%TMPRT%\3rdParty
 @set TMPLOG=bldlog-1.txt
+@set TMPSG=F:\FG\18\install\msvc100\simgear
 
 @set TMPOPTS=-DCMAKE_INSTALL_PREFIX=%TMPDRV%\FG\18\3rdParty
+@if EXIST %TMPSG%\nul (
+@set TMPOPTS=%TMPOPTS% -DCMAKE_PREFIX_PATH:PATH=%TMPSG%
+)
+
+@REM Add this to DEBUG what is happening in the FindSimGear.cmake modules
+@REM set TMPOPTS=%TMPOPTS% -DSG_DBG_FINDING:BOOL=TRUE
 
 @call chkmsvc %TMPPRJ%
 
@@ -28,6 +35,10 @@
 @REM Set any environment variables needed
 @set BOOST_ROOT=%TMPDRV%\FG\18\boost_1_53_0
 @echo Set BOOST_ROOT=%BOOST_ROOT% >> %TMPLOG%
+@if NOT EXIST %TMPSG%\nul goto DNSG
+@set SIMGEAR_DIR=%TMPSG%
+@echo Set SIMGEAR_DIR=%SIMGEAR_DIR% >> %TMPLOG%
+:DGSG
 
 cmake %TMPSRC% %TMPOPTS% >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR1

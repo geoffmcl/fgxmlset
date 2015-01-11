@@ -27,6 +27,12 @@
 
 include(SelectLibraryConfigurations)
 
+macro(DBG_MSG _MSG)
+    if (SG_DBG_FINDING)
+        message(STATUS "DBG: ${_MSG}")
+    endif ()
+endmacro()
+
 macro(find_sg_library libName varName libs)
     set(libVarName "${varName}_LIBRARY")
     # do not cache the library check
@@ -48,22 +54,22 @@ macro(find_sg_library libName varName libs)
       ${ADDITIONAL_LIBRARY_PATHS}
     )
     
-   # message(STATUS "before: Simgear ${${libVarName}_RELEASE} ")
-  #  message(STATUS "before: Simgear ${${libVarName}_DEBUG} ")
+    DBG_MSG("before: Simgear REL ${${libVarName}_RELEASE} ")
+    DBG_MSG("before: Simgear DBG ${${libVarName}_DEBUG} ")
     
     select_library_configurations( ${varName} )
 
-  #  message(STATUS "after:Simgear ${${libVarName}_RELEASE} ")
-  #  message(STATUS "after:Simgear ${${libVarName}_DEBUG} ")
+    DBG_MSG("after:Simgear REL ${${libVarName}_RELEASE} ")
+    DBG_MSG("after:Simgear DBG ${${libVarName}_DEBUG} ")
 
     set(componentLibRelease ${${libVarName}_RELEASE})
-  #  message(STATUS "Simgear ${libVarName}_RELEASE ${componentLibRelease}")
+    DBG_MSG("Simgear ${libVarName}_RELEASE ${componentLibRelease}")
     set(componentLibDebug ${${libVarName}_DEBUG})
-   # message(STATUS "Simgear ${libVarName}_DEBUG ${componentLibDebug}")
+    DBG_MSG("Simgear ${libVarName}_DEBUG ${componentLibDebug}")
     
     if (NOT ${libVarName}_DEBUG)
         if (NOT ${libVarName}_RELEASE)
-            #message(STATUS "found ${componentLib}")
+            DBG_MSG("found ${componentLib}")
             list(APPEND ${libs} ${componentLibRelease})
         endif()
     else()
@@ -80,10 +86,10 @@ FIND_PATH(SIMGEAR_INCLUDE_DIR simgear/math/SGMath.hxx
 
 # make sure the simgear include directory exists
 if (NOT SIMGEAR_INCLUDE_DIR)
-    message(FATAL_ERROR "Cannot find SimGear includes! (Forgot 'make install' for SimGear?) "
+    message(STATUS "Cannot find SimGear includes! (Forgot 'make install' for SimGear?) "
             "Compile & INSTALL SimGear before configuring FlightGear. "
             "When using non-standard locations, use 'SIMGEAR_DIR' to configure the SimGear location.")
-endif()
+else (NOT SIMGEAR_INCLUDE_DIR)
 
 message(STATUS "SimGear include directory: ${SIMGEAR_INCLUDE_DIR}")
 
@@ -92,19 +98,19 @@ file(READ ${SIMGEAR_INCLUDE_DIR}/simgear/version.h SG_VERSION_FILE)
 
 # make sure the simgear/version.h header exists
 if (NOT SG_VERSION_FILE)
-    message(FATAL_ERROR "Found SimGear, but it does not contain a simgear/version.h include! "
+    message(STATUS "Found SimGear, but it does not contain a simgear/version.h include! "
             "SimGear installation is incomplete or mismatching.")
-endif()
+else (NOT SG_VERSION_FILE)
 
 string(STRIP "${SG_VERSION_FILE}" SIMGEAR_DEFINE)
 string(REPLACE "#define SIMGEAR_VERSION " "" SIMGEAR_VERSION "${SIMGEAR_DEFINE}")
 
-if(NOT SIMGEAR_VERSION)
-    message(FATAL_ERROR "Unable to find SimGear or simgear/version.h does not exist/is invalid. "
+if (NOT SIMGEAR_VERSION)
+    message(STATUS "Unable to find SimGear or simgear/version.h does not exist/is invalid. "
             "Make sure you have installed the SimGear ${SimGear_FIND_VERSION} includes. "
             "When using non-standard locations, please use 'SIMGEAR_DIR' "
             "to select the SimGear library location to be used.")
-endif()
+else (NOT SIMGEAR_VERSION)
 
 message(STATUS "found SimGear version: ${SIMGEAR_VERSION}")
 #message(STATUS "found SimGear version: ${SIMGEAR_VERSION} (needed ${SimGear_FIND_VERSION})")
@@ -120,7 +126,7 @@ message(STATUS "found SimGear version: ${SIMGEAR_VERSION}")
 # find_package(Threads REQUIRED)
 
 if(SIMGEAR_SHARED)
-    message(STATUS "looking for shared Simgear libraries")
+    DBG_MSG("looking for shared Simgear libraries")
 
     find_sg_library(SimGearCore SIMGEAR_CORE SIMGEAR_CORE_LIBRARIES)
     find_sg_library(SimGearScene SIMGEAR_SCENE SIMGEAR_LIBRARIES)
@@ -129,13 +135,13 @@ if(SIMGEAR_SHARED)
     set(SIMGEAR_CORE_LIBRARY_DEPENDENCIES "")
     set(SIMGEAR_SCENE_LIBRARY_DEPENDENCIES "")
     
-   # message(STATUS "core lib ${SIMGEAR_CORE_LIBRARIES}")
-  #  message(STATUS "all libs ${SIMGEAR_LIBRARIES}")
+    DBG_MSG("core lib ${SIMGEAR_CORE_LIBRARIES}")
+    DBG_MSG("all libs ${SIMGEAR_LIBRARIES}")
 else(SIMGEAR_SHARED)
 
     set(SIMGEAR_LIBRARIES "") # clear value
     set(SIMGEAR_CORE_LIBRARIES "") # clear value
-    ### message(STATUS "looking for static SimGear libraries")
+    DBG_MSG("looking for static SimGear libraries")
     
     find_sg_library(SimGearCore SIMGEAR_CORE SIMGEAR_CORE_LIBRARIES)
     find_sg_library(SimGearScene SIMGEAR_SCENE SIMGEAR_LIBRARIES)
@@ -170,12 +176,12 @@ else(SIMGEAR_SHARED)
 endif(SIMGEAR_SHARED)
 
 if((NOT SIMGEAR_CORE_LIBRARIES) OR (NOT SIMGEAR_LIBRARIES))
-    message(FATAL_ERROR "Cannot find SimGear libraries! (Forgot 'make install' for SimGear?) "
+    message(STATUS "Cannot find SimGear libraries! (Forgot 'make install' for SimGear?) "
             "Compile & INSTALL SimGear before configuring FlightGear. "
             "When using non-standard locations, use 'SIMGEAR_DIR' to configure the SimGear location.")
-else()
+            
+else((NOT SIMGEAR_CORE_LIBRARIES) OR (NOT SIMGEAR_LIBRARIES))
     ### message(STATUS "found SimGear libraries")
-endif()
 
 # now we've found SimGear, try test-compiling using its includes
 if (RUN_SIMGEAR_TEST)
@@ -245,5 +251,10 @@ FIND_PACKAGE_HANDLE_STANDARD_ARGS(SimGear DEFAULT_MSG
      SIMGEAR_LIBRARIES SIMGEAR_CORE_LIBRARIES SIMGEAR_INCLUDE_DIRS)
 ############################################################################
 endif ()
+
+endif((NOT SIMGEAR_CORE_LIBRARIES) OR (NOT SIMGEAR_LIBRARIES))
+endif (NOT SIMGEAR_VERSION)
+endif (NOT SG_VERSION_FILE)
+endif (NOT SIMGEAR_INCLUDE_DIR)
 
 # eof
