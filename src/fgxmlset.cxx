@@ -429,10 +429,14 @@ bool Already_Pushed(std::string &file)
 }
 
 
-int save_text_per_flag( char *value, std::string &mfile, const char *file )
+int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
 {
     int iret = 0;
-    if (!value)
+    if (!in_value)
+        return 0;
+    std::string value = in_value;
+    trim_in_place(value);
+    if (value.size() == 0)
         return 0;
     if (parsing_flag & flg_sim) {
         if (VERB5) {
@@ -508,12 +512,12 @@ int save_text_per_flag( char *value, std::string &mfile, const char *file )
                 }
             } else if (find_extension(ifile,".xml") || find_extension(ifile,".ac")) {
                 // can NOT find a file we are interested in, give a warning
-                if (has_file_path((char *)value)) { // if it has a path
+                if (has_file_path((char *)value.c_str())) { // if it has a path
                     // like 'X:\fgdata\..\Models\a320.fuselage.ac'
                     if (last_path && find_extension(ifile,".ac")) {
                         std::string tmp = last_path;
                         tmp += PATH_SEP;
-                        tmp += (char *)value;
+                        tmp += value;
                         ensure_native_sep(tmp);
                         fix_relative_path(tmp);
                         if (is_file_or_directory(tmp.c_str()) == 1) {
@@ -540,7 +544,6 @@ int save_text_per_flag( char *value, std::string &mfile, const char *file )
                     }
                 }
             }
-
         }
     }
 

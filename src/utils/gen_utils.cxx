@@ -356,4 +356,23 @@ void out_module_name()
     SPRTF("%s",module);
 }
 
+/////////////////////////////////////////////////////////////
+// trim a string utilities
+// modifies input string, returns input
+std::string& trim_left_in_place(std::string& str) {
+    size_t i = 0;
+    while(i < str.size() && isspace(str[i])) { ++i; };
+    return str.erase(0, i);
+}
+
+std::string& trim_right_in_place(std::string& str) {
+    size_t i = str.size();
+    while(i > 0 && isspace(str[i - 1])) { --i; };
+    return str.erase(i, str.size());
+}
+
+std::string& trim_in_place(std::string& str) {
+    return trim_left_in_place(trim_right_in_place(str));
+}
+
 // eof = gen_utils.cxx
