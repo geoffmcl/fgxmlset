@@ -94,6 +94,8 @@ static const char *filename = 0;
 //static const char *filename = "ufo-set.xml";
 //static const char *filename = "X:\\fgdata\\Aircraft\\A320-family\\A320-231-set.xml";
 static char *out_file = 0;
+static char *fg_root_path = 0;  // path to fgdata root
+static char *suggested_root = 0;
 
 static std::string root_path;
 static std::string ac_path;
@@ -129,6 +131,14 @@ void set_last_components( std::string &file )
             }
         } else {
             last_path = strdup(path.c_str());
+        }
+        // get a suggested root
+        if (suggested_root == 0) {
+            size_t pos = path.find("Aircraft");
+            if (pos > 0) {
+                std::string tmp = path.substr(0,pos-1);
+                suggested_root = strdup(tmp.c_str());
+            }
         }
     }
 }
@@ -269,6 +279,10 @@ bool has_no_excluded_folders(std::string &path)
             return false;
     }
     return true;
+}
+bool has_excluded_folders(std::string &path)
+{
+    return !has_no_excluded_folders(path);
 }
 
 PFLGITEMS pflgitems = 0;
@@ -514,9 +528,13 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                 // can NOT find a file we are interested in, give a warning
                 if (has_file_path((char *)value.c_str())) { // if it has a path
                     // like 'X:\fgdata\..\Models\a320.fuselage.ac'
-                    if (last_path && find_extension(ifile,".ac")) {
-                        std::string tmp = last_path;
-                        tmp += PATH_SEP;
+                    std::string tmp, tmp2, tmp3;
+                    if (find_extension(ifile,".ac")) {
+                        // is an AC file
+                        if (last_path) {
+                            tmp = last_path;
+                            tmp += PATH_SEP;
+                        }
                         tmp += value;
                         ensure_native_sep(tmp);
                         fix_relative_path(tmp);
@@ -524,14 +542,100 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                             // store this as the .ac file
                             pflgitems->acpaths.push_back(tmp);
                         } else {
-                            SPRTF("WARNING: Unable to find the model file '%s'\nnor '%s'\n", ifile.c_str(), tmp.c_str());
+                            if (fg_root_path) {
+                                tmp2 = fg_root_path;
+                                tmp2 += PATH_SEP;
+                                tmp2 += value;
+                                ensure_native_sep(tmp2);
+                                fix_relative_path(tmp2);
+                                if (is_file_or_directory(tmp2.c_str()) == 1) {
+                                    pflgitems->acpaths.push_back(tmp2);
+                                    return 0;
+                                }
+                            }
+                            if (suggested_root) {
+                                tmp3 = suggested_root;
+                                tmp3 += PATH_SEP;
+                                tmp3 += value;
+                                ensure_native_sep(tmp3);
+                                fix_relative_path(tmp3);
+                                if (is_file_or_directory(tmp3.c_str()) == 1) {
+                                    pflgitems->acpaths.push_back(tmp3);
+                                    return 0;
+                                }
+                            }
+
+                            SPRTF("WARNING: Unable to find the model file '%s'\n", value.c_str());
+                            SPRTF("As '%s'\n", ifile.c_str());
+                            if (VERB2) {
+                                if (tmp.size())
+                                    SPRTF("Nor '%s'\n", tmp.c_str());
+                                if (tmp2.size())
+                                    SPRTF("Nor '%s'\n", tmp2.c_str());
+                                if (tmp3.size() && (ifile != tmp3))
+                                    SPRTF("Nor '%s'\n", tmp3.c_str());
+                            }
                         }
                     } else {
-                        SPRTF("WARNING: Unable to find file '%s'\n", ifile.c_str());
+                        // is an XML file
+                        if (last_path) {
+                            tmp = last_path;
+                            tmp += PATH_SEP;
+                            tmp += value;
+                            ensure_native_sep(tmp);
+                            fix_relative_path(tmp);
+                            if (is_file_or_directory(tmp.c_str()) == 1) {
+                                mfile = tmp;  // can be processed
+                                iret = 1;
+                                return iret;
+                            }
+                        }
+                        if (fg_root_path) {
+                            tmp2 = fg_root_path;
+                            tmp2 += PATH_SEP;
+                            tmp2 += value;
+                            ensure_native_sep(tmp2);
+                            fix_relative_path(tmp2);
+                            if (is_file_or_directory(tmp2.c_str()) == 1) {
+                                mfile = tmp2;  // can be processed
+                                iret = 1;
+                                return iret;
+                            }
+                        }
+                        if (suggested_root) {
+                            tmp3 = suggested_root;
+                            tmp3 += PATH_SEP;
+                            tmp3 += value;
+                            ensure_native_sep(tmp3);
+                            fix_relative_path(tmp3);
+                            if (is_file_or_directory(tmp3.c_str()) == 1) {
+                                mfile = tmp3;  // can be processed
+                                iret = 1;
+                                return iret;
+                            }
+                        }
+                        size_t pos = value.find("Aircraft");
+                        if (pos == 0) {
+                            if (has_excluded_folders(value)) {
+                                iret = 0;   // we can forget this include
+                                mfile = ifile;  // mark as a processed file
+                                return iret;
+                            }
+                        }
+                        SPRTF("WARNING: Given path '%s'\nunable to find file '%s'\n", value.c_str(), ifile.c_str());
+                        if (VERB2) {
+                            if (tmp.size())
+                                SPRTF("Nor '%s'\n", tmp.c_str());
+                            if (tmp2.size())
+                                SPRTF("Nor '%s'\n", tmp2.c_str());
+                            if (tmp3.size() && (ifile != tmp3))
+                                SPRTF("Nor '%s'\n", tmp3.c_str());
+                        }
+
                     }
                 } else if (find_extension(ifile,".ac") && (pflgitems->acpaths.size() == 0)) {
                     // try REAL HARD to find this file... as the first .ac
-                    // maybe it is releative to the current file
+                    // maybe it is relative to the current file
                     ifile = file;
                     ifile = get_path_only(ifile);
                     ifile += PATH_SEP;
@@ -865,11 +969,12 @@ void give_help( char *name )
     printf("%s [options] input-fg-xml-set-file\n", file.c_str());
     printf("\n");
     printf("Options:\n");
-    printf(" --help (-h or -?) = This help and exit(2)\n");
-    printf(" --verb[nn]   (-v) = Bump or set verbosity. (def=%d)\n", verbosity);
-    printf(" --log <file> (-l) = Set the log file for output.  Use 'none' to disable.\n (def=%s)\n", get_log_file());
-    printf(" --out <file> (-o) = Write results to out file. (def=%s)\n",
+    printf(" --help  (-h or -?) = This help and exit(2)\n");
+    printf(" --verb[nn]    (-v) = Bump or set verbosity. (def=%d)\n", verbosity);
+    printf(" --log <file>  (-l) = Set the log file for output.  Use 'none' to disable.\n (def=%s)\n", get_log_file());
+    printf(" --out <file>  (-o) = Write results to out file. (def=%s)\n",
         out_file ? out_file : "none");
+    printf(" --root <path> (-r) = Set the 'root' path.\n");
     printf("\n");
     printf("Will parse the input as a FlightGear 'xxx-set' xml file, and extract information.\n");
     printf("While there is a good attempt to handle a relative file name, it is certainly better\n");
@@ -981,6 +1086,21 @@ int parse_args( int argc, char **argv )
                     out_file = strdup(sarg);
                 } else {
                     SPRTF("%s: Expected output file name to follow '%s'! Aborting...\n", module, arg);
+                    return 1;
+                }
+                break;
+            case 'r':
+                if (i2 < argc) {
+                    i++;
+                    sarg = argv[i];
+                    fg_root_path = strdup(sarg);
+                    if (is_file_or_directory(fg_root_path) != 2) {
+                        SPRTF("%s: Unable to 'stat' fg root path '%s'! Check name. Aborting...\n", module,
+                            fg_root_path);
+                        return 1;
+                    }
+                } else {
+                    SPRTF("%s: Expected root path to follow '%s'! Aborting...\n", module, arg);
                     return 1;
                 }
                 break;
