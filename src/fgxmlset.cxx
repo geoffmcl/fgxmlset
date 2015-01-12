@@ -182,7 +182,7 @@ typedef struct tagFLGITEMS {
     std::string aero;
     std::string tags;
     std::string minrwy;
-    vSTG acpaths;
+    vSTG acfiles;
 }FLGITEMS, *PFLGITEMS;
 
 typedef struct tagFLG2TXT {
@@ -292,7 +292,7 @@ void show_items_found()
 {
     if (!pflgitems)
         return;
-    size_t ii, max = pflgitems->acpaths.size();
+    size_t ii, max = pflgitems->acfiles.size();
     std::stringstream ss;
 
     if (VERB5) {
@@ -331,7 +331,7 @@ void show_items_found()
         }
     }
 
-    max = pflgitems->acpaths.size();
+    max = pflgitems->acfiles.size();
     ss << "# " << module << ": Processed the main file '" << main_file << MEOL;
     ss << "# Items found in scan of " << scanned_count << " xml file(s), " << nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed));
     ss << " bytes, in " << get_seconds_stg(get_seconds() - bgn_secs) << MEOL;
@@ -364,11 +364,11 @@ void show_items_found()
 
     if (max) {
         if (max == 1) {
-            ss << "model-file      = " << pflgitems->acpaths[0] << MEOL;
+            ss << "model-file      = " << pflgitems->acfiles[0] << MEOL;
         } else {
             ss << "# Got " << max << " 'model' files..." << MEOL;
             for (ii = 0; ii < max; ii++) {
-                ss << "model-file" << (ii + 1) << " = " << pflgitems->acpaths[ii] << MEOL;
+                ss << "model-file" << (ii + 1) << " = " << pflgitems->acfiles[ii] << MEOL;
             }
         }
     }
@@ -397,7 +397,7 @@ void show_items_found()
     }
 
     // clean up...
-    pflgitems->acpaths.clear();
+    pflgitems->acfiles.clear();
     delete pflgitems;
     pflgitems = 0;
 }
@@ -441,6 +441,20 @@ bool Already_Pushed(std::string &file)
     }
     return false;
 }
+
+bool conditional_addition(vSTG &vs, std::string &ifile)
+{
+    std::string f;
+    size_t ii, max = vs.size();
+    for (ii = 0; ii < max; ii++) {
+        f = vs[ii];
+        if (f == ifile)
+            return false;
+    }
+    vs.push_back(ifile);
+    return true;
+}
+
 
 
 int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
@@ -522,7 +536,8 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                         mfile = ifile;
                     }
                 } else if (find_extension(ifile,".ac")) {
-                    pflgitems->acpaths.push_back(ifile);
+                    //pflgitems->acpaths.push_back(ifile);
+                    conditional_addition(pflgitems->acfiles,ifile);
                 }
             } else if (find_extension(ifile,".xml") || find_extension(ifile,".ac")) {
                 // can NOT find a file we are interested in, give a warning
@@ -540,7 +555,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                         fix_relative_path(tmp);
                         if (is_file_or_directory(tmp.c_str()) == 1) {
                             // store this as the .ac file
-                            pflgitems->acpaths.push_back(tmp);
+                            conditional_addition(pflgitems->acfiles,tmp);
                         } else {
                             if (fg_root_path) {
                                 tmp2 = fg_root_path;
@@ -549,7 +564,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                                 ensure_native_sep(tmp2);
                                 fix_relative_path(tmp2);
                                 if (is_file_or_directory(tmp2.c_str()) == 1) {
-                                    pflgitems->acpaths.push_back(tmp2);
+                                    conditional_addition(pflgitems->acfiles,tmp2);
                                     return 0;
                                 }
                             }
@@ -560,7 +575,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                                 ensure_native_sep(tmp3);
                                 fix_relative_path(tmp3);
                                 if (is_file_or_directory(tmp3.c_str()) == 1) {
-                                    pflgitems->acpaths.push_back(tmp3);
+                                    conditional_addition(pflgitems->acfiles,tmp3);
                                     return 0;
                                 }
                             }
@@ -633,7 +648,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                         }
 
                     }
-                } else if (find_extension(ifile,".ac") && (pflgitems->acpaths.size() == 0)) {
+                } else if (find_extension(ifile,".ac") && (pflgitems->acfiles.size() == 0)) {
                     // try REAL HARD to find this file... as the first .ac
                     // maybe it is relative to the current file
                     ifile = file;
@@ -642,7 +657,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                     ifile += value;
                     if (is_file_or_directory(ifile.c_str()) == 1) {
                         // store this as the .ac file
-                        pflgitems->acpaths.push_back(ifile);
+                        conditional_addition(pflgitems->acfiles,ifile);
                     } else {
                         SPRTF("WARNING: Unable to find ac file '%s' absolute or relative!\n", value.c_str() );
                     }
