@@ -288,15 +288,49 @@ bool has_excluded_folders(std::string &path)
 PFLGITEMS pflgitems = 0;
 #define MEOL std::endl
 
+std::string choose_best_model_file(vSTG &ac)
+{
+    std::string p,s,f,name,path;
+    size_t ii, max = ac.size();
+    size_t i2, max2;
+    std::string acr = "Aircraft";
+    for (ii = 0; ii < max; ii++) {
+        f = ac[ii];
+        name = get_file_only(f);
+        path = get_path_only(f);
+        if (name.size() && path.size()) {
+            vSTG vsp = PathSplit(path);
+            vSTG vsf = FileSplit(name);
+            s = vsf[0];
+            max2 = vsp.size();
+            for (i2 = 0; i2 < max2; i2++) {
+                p = vsp[i2];
+                if (p == acr) {
+                    i2++;   // get path after 'Aircraft'
+                    if (i2 < max2) {
+                        p = vsp[i2];
+                        if (p == s) {
+                            return f;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+    s = "";
+    return s;
+}
+
 void show_items_found()
 {
     if (!pflgitems)
         return;
     size_t ii, max = pflgitems->acfiles.size();
     std::stringstream ss;
+    std::string s;
 
     if (VERB5) {
-        std::string s;
         max = all_ac_files.size();
         SPRTF("\n");
         SPRTF("%s: ac files seen %d...\n", module, (int)max );
@@ -366,6 +400,9 @@ void show_items_found()
         if (max == 1) {
             ss << "model-file      = " << pflgitems->acfiles[0] << MEOL;
         } else {
+            s = choose_best_model_file(pflgitems->acfiles);
+            if (s.size())
+                ss << "model-file      = " << s << MEOL;
             ss << "# Got " << max << " 'model' files..." << MEOL;
             for (ii = 0; ii < max; ii++) {
                 ss << "model-file" << (ii + 1) << " = " << pflgitems->acfiles[ii] << MEOL;
@@ -375,7 +412,7 @@ void show_items_found()
     if (VERB1) {
         if (VERB2)
             SPRTF("\n");
-        SPRTF("%s", ss.str().c_str());
+        direct_out_it((char *)ss.str().c_str());
     }
     if (out_file) {
         FILE *fp = fopen(out_file,"w");
@@ -455,8 +492,6 @@ bool conditional_addition(vSTG &vs, std::string &ifile)
     return true;
 }
 
-
-
 int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
 {
     int iret = 0;
@@ -481,7 +516,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
             pflgitems = new FLGITEMS;
         if (GOT_FLG(simauthor)) {
             // save the author
-            pflgitems->authors = value;
+            pflgitems->authors = agressive_trim(value);
         }
         if (GOT_FLG(simstatus)) {
             pflgitems->status = value;
@@ -510,7 +545,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
         if (GOT_FLG(simdesc)) {
             if (pflgitems->desc.size() == 0) {
                 // only take in the 'first' decriptions
-                pflgitems->desc = value;
+                pflgitems->desc = agressive_trim(value);
             }
         }
         // added 20150111
@@ -1172,6 +1207,7 @@ void test_stg()
 int main( int argc, char **argv )
 {
     // test_stg();
+    // test_stg_trim();
     int iret = parse_args(argc,argv);
     if (iret)
         return iret;

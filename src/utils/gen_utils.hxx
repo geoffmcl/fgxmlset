@@ -48,9 +48,12 @@ extern void fix_relative_path( std::string &path );
 }
 
 extern vSTG PathSplit( std::string &path );
+extern vSTG FileSplit( std::string &file );
 extern std::string get_file_only( std::string &path );
 extern std::string get_path_only( std::string &file );
 extern std::string& trim_in_place(std::string& str);
+extern std::string agressive_trim( std::string &str );
+
 #endif
 
 #endif // #ifndef _GEN_UTILS_HXX_

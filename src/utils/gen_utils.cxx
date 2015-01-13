@@ -126,6 +126,21 @@ vSTG PathSplit( std::string &path )
     return result;
 }
 
+vSTG FileSplit( std::string &file ) 
+{
+    size_t pos = file.rfind(".");
+    vSTG vs;
+    if (pos > 0) {
+        std::string s = file.substr(0,pos);
+        vs.push_back(s);
+        s = file.substr(pos);
+        vs.push_back(s);
+    } else {
+        vs.push_back(file);
+    }
+    return vs;
+}
+
 void fix_relative_path( std::string &path )
 {
     vSTG vs = PathSplit(path);
@@ -373,6 +388,47 @@ std::string& trim_right_in_place(std::string& str) {
 
 std::string& trim_in_place(std::string& str) {
     return trim_left_in_place(trim_right_in_place(str));
+}
+
+std::string trim_ws(const std::string& str,
+                 const std::string& whitespace = " \t")
+{
+    const size_t strBegin = str.find_first_not_of(whitespace);
+    if (strBegin == std::string::npos)
+        return ""; // no content
+
+    const size_t strEnd = str.find_last_not_of(whitespace);
+    const size_t strRange = strEnd - strBegin + 1;
+
+    return str.substr(strBegin, strRange);
+}
+
+std::string trim_reduce(const std::string& str,
+                   const std::string& fill = " ",
+                   const std::string& whitespace = " \t\r\n")
+{
+    // trim first
+    std::string result = trim_ws(str, whitespace);
+
+    // replace sub ranges
+    size_t beginSpace = result.find_first_of(whitespace);
+    while (beginSpace != std::string::npos)
+    {
+        const size_t endSpace = result.find_first_not_of(whitespace, beginSpace);
+        const size_t range = endSpace - beginSpace;
+
+        result.replace(beginSpace, range, fill);
+
+        const size_t newStart = beginSpace + fill.length();
+        beginSpace = result.find_first_of(whitespace, newStart);
+    }
+
+    return result;
+}
+
+std::string agressive_trim( std::string &str )
+{
+    return trim_reduce(str);
 }
 
 // eof = gen_utils.cxx
