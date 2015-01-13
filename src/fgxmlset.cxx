@@ -82,6 +82,7 @@ static vSTG loaded_files;
 ////////////////////////////////
 static vSTG all_ac_files;
 static vSTG all_ac_xml;
+static vSTG all_xml_files;
 ////////////////////////////////
 static std::string loaded_file;
 static const char *module = "fgxmlset";
@@ -230,6 +231,23 @@ static int simmodpath = flg_path;
 //static int simmodpath = (flg_sim | flg_path);
 //static int simmodpath = (flg_sim | flg_rmodel | flg_path);
 
+std::string get_flag_name(int flag)
+{
+    std::string s;
+    PFLG2TXT f2t = flg2txt;
+    while (f2t->text) {
+        if (flag & f2t->flag) {
+            if (s.size())
+                s += "/";
+            s += f2t->text;
+        }
+        f2t++;
+    }
+    if (s.size() == 0)
+        s = "unknown";
+    return s;
+}
+
 void add_parsing_flag( char *element )
 {
     PFLG2TXT f2t = flg2txt;
@@ -238,8 +256,12 @@ void add_parsing_flag( char *element )
         if (strcmp(f2t->text,element) == 0) {
             flag = f2t->flag;
             parsing_flag |= flag;
+            if (VERB9) {
+                std::string s1 = get_flag_name(flag); 
+                std::string s2 = get_flag_name(parsing_flag); 
+                SPRTF("DBG: Added flag '%s' %#X %s, now %s\n", element, flag, s1.c_str(), s2.c_str());
+            }
             flag = parsing_flag;
-            ///SPRTF("DBG: Add flag '%s' %#X\n", element, flag);
             return;
         }
         f2t++;
@@ -255,8 +277,12 @@ void remove_parsing_flag( char *element )
             flag = f2t->flag;
             if (parsing_flag & flag) {
                 parsing_flag &= ~flag;
+                if (VERB9) {
+                    std::string s1 = get_flag_name(flag); 
+                    std::string s2 = get_flag_name(parsing_flag); 
+                    SPRTF("DBG: Removed flag '%s' %#X %s, now %s\n", element, flag, s1.c_str(), s2.c_str());
+                }
                 flag = parsing_flag;
-                // SPRTF("DBG: Removed flag '%s' %#X\n", element, flag);
             } else {
                 flag = 0;
             }
@@ -479,6 +505,18 @@ bool Already_Pushed(std::string &file)
     return false;
 }
 
+bool Already_Saved_Xml(std::string &file)
+{
+    size_t ii, max = all_xml_files.size();
+    std::string s;
+    for (ii = 0; ii < max; ii++) {
+        s = all_xml_files[ii];
+        if (file == s)
+            return true;
+    }
+    return false;
+}
+
 bool conditional_addition(vSTG &vs, std::string &ifile)
 {
     std::string f;
@@ -492,6 +530,24 @@ bool conditional_addition(vSTG &vs, std::string &ifile)
     return true;
 }
 
+#if 0 // 00000000000000000000000000000000000000
+size_t debug_stop(std::string &val)
+{
+    size_t i;
+    i = val.size();
+    return i;
+}
+
+void debug_test_stg(std::string &value)
+{
+    const char *fnd = "A380.xml";
+    size_t pos = value.find(fnd);
+    if (pos != std::string::npos) {
+        debug_stop(value);
+    }
+}
+#endif // 0000000000000000000000000000000000000000
+
 int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
 {
     int iret = 0;
@@ -501,14 +557,21 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
     trim_in_place(value);
     if (value.size() == 0)
         return 0;
+    // debug_test_stg(value);
     if (parsing_flag & flg_sim) {
         if (VERB5) {
             if (active_name && (strcmp(active_name,"path") == 0)) {
                 std::string s = value;
-                if (find_extension(s,".ac") && !Already_Pushed(s)) {
-                    // parallel lists
-                    all_ac_files.push_back(s);
-                    all_ac_xml.push_back(loaded_file);
+                if (find_extension(s,".ac")) {
+                    if (!Already_Pushed(s)) {
+                        // parallel lists
+                        all_ac_files.push_back(s);
+                        all_ac_xml.push_back(loaded_file);
+                    }
+                } else if (find_extension(s,".xml")) {
+                    if (!Already_Saved_Xml(s)) {
+                        all_xml_files.push_back(s);
+                    }
                 }
             }
         }
@@ -857,10 +920,12 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                             set_last_components(s);
                             //path_stack.push_back(path);
                             xmlpath.clear();
+                            int save_parse = parsing_flag;
                             walkDoc(idoc, lev + 1, s.c_str());
                             xmlFreeDoc(idoc);       // free document
                             xmlpath.clear();
                             xmlpath = PathSplit(path);
+                            parsing_flag = save_parse;
                         }
                     } else {
                         SPRTF("WARNING: Failed to load include file '%s'!\n", s.c_str());
