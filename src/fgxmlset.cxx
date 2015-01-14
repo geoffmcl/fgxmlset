@@ -99,6 +99,7 @@ static char *out_file = 0;
 static char *fg_root_path = 0;  // path to fgdata root
 static char *suggested_root = 0;
 static bool in_primary_set = true;
+static bool prim_set_desc = false;
 
 static std::string root_path;
 static std::string ac_path;
@@ -229,9 +230,12 @@ static int simdesc  = (flg_sim | flg_desc);
 static int simtags  = (flg_sim | flg_tags | flg_tag);
 static int simminrwy = (flg_sim | flg_navdb | flg_minrwy);
 
+#ifndef STRICT_MODEL_PATH
 static int simmodpath = flg_path;
+#else   // STRICT_MODEL_PATH
 //static int simmodpath = (flg_sim | flg_path);
-//static int simmodpath = (flg_sim | flg_rmodel | flg_path);
+static int simmodpath = (flg_sim | flg_rmodel | flg_path);
+#endif // STRICT_MODEL_PATH y/n
 
 std::string get_flag_name(int flag)
 {
@@ -556,7 +560,8 @@ bool conditional_addition(vSTG &vs, std::string &ifile)
     return true;
 }
 
-#if 0 // 00000000000000000000000000000000000000
+// #define ADD_DEBUG_STOP
+#ifdef ADD_DEBUG_STOP
 size_t debug_stop(std::string &val)
 {
     size_t i;
@@ -566,13 +571,14 @@ size_t debug_stop(std::string &val)
 
 void debug_test_stg(std::string &value)
 {
-    const char *fnd = "A380.xml";
+    //const char *fnd = "A380.xml";
+    const char *fnd = "bo105.ac";
     size_t pos = value.find(fnd);
     if (pos != std::string::npos) {
         debug_stop(value);
     }
 }
-#endif // 0000000000000000000000000000000000000000
+#endif // ADD_DEBUG_STOP
 
 int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
 {
@@ -583,7 +589,9 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
     trim_in_place(value);
     if (value.size() == 0)
         return 0;
-    // debug_test_stg(value);
+#ifdef ADD_DEBUG_STOP
+    debug_test_stg(value);
+#endif
     if (parsing_flag & flg_sim) {
         if (VERB5) {
             if (active_name && (strcmp(active_name,"path") == 0)) {
@@ -634,10 +642,15 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
         if (GOT_FLG(simdesc)) {
             if (pflgitems->desc.size() == 0) {
                 // only take in the 'first' decriptions
+                if (in_primary_set)
+                    prim_set_desc = true;
                 pflgitems->desc = agressive_trim(value);
             } else if (in_primary_set) {
-                // of if in the primary set file
-                pflgitems->desc = agressive_trim(value);
+                // if in the primary set file use thsi description if not already set
+                if (!prim_set_desc) {
+                    pflgitems->desc = agressive_trim(value);
+                    prim_set_desc = true;
+                }
             }
         }
         // added 20150111
@@ -775,8 +788,9 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                         }
 
                     }
-                } else if (find_extension(ifile,".ac") && (pflgitems->acfiles.size() == 0)) {
-                    // try REAL HARD to find this file... as the first .ac
+                //} else if (find_extension(ifile,".ac") && (pflgitems->acfiles.size() == 0)) {
+                } else if (find_extension(ifile,".ac")) {
+                    // try REAL HARD to find this file... as the possible model .ac
                     // maybe it is relative to the current file
                     ifile = file;
                     ifile = get_path_only(ifile);
@@ -950,6 +964,9 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                             //path_stack.push_back(path);
                             xmlpath.clear();
                             int save_parse = parsing_flag;
+#ifdef CLEAR_PARSE_FLAG
+                            parsing_flag = 0;   // restart parsing flag for new document
+#endif // CLEAR_PARSE_FLAG
                             in_primary_set = false;
                             walkDoc(idoc, lev + 1, s.c_str());
                             xmlFreeDoc(idoc);       // free document
