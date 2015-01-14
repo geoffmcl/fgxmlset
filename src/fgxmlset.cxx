@@ -24,6 +24,7 @@
 #else
 #include <string.h> // for strcmp(), ...
 #include <unistd.h> // getcwd(), ...
+#define stricmp strcasecmp
 #endif
 #include <libxml/xmlmemory.h>
 #include <libxml/parser.h>
