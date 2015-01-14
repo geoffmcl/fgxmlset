@@ -344,6 +344,30 @@ std::string choose_best_model_file(vSTG &ac)
             }
         }
     }
+    for (ii = 0; ii < max; ii++) {
+        f = ac[ii];
+        name = get_file_only(f);
+        path = get_path_only(f);
+        if (name.size() && path.size()) {
+            vSTG vsp = PathSplit(path);
+            vSTG vsf = FileSplit(name);
+            s = vsf[0];
+            max2 = vsp.size();
+            for (i2 = 0; i2 < max2; i2++) {
+                p = vsp[i2];
+                if (p == acr) {
+                    i2++;   // get path after 'Aircraft'
+                    if (i2 < max2) {
+                        p = vsp[i2];
+                        if (stricmp(p.c_str(),s.c_str()) == 0) {
+                            return f;
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
     s = "";
     return s;
 }
