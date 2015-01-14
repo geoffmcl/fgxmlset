@@ -97,6 +97,7 @@ static const char *filename = 0;
 static char *out_file = 0;
 static char *fg_root_path = 0;  // path to fgdata root
 static char *suggested_root = 0;
+static bool in_primary_set = true;
 
 static std::string root_path;
 static std::string ac_path;
@@ -633,6 +634,9 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
             if (pflgitems->desc.size() == 0) {
                 // only take in the 'first' decriptions
                 pflgitems->desc = agressive_trim(value);
+            } else if (in_primary_set) {
+                // of if in the primary set file
+                pflgitems->desc = agressive_trim(value);
             }
         }
         // added 20150111
@@ -945,11 +949,13 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                             //path_stack.push_back(path);
                             xmlpath.clear();
                             int save_parse = parsing_flag;
+                            in_primary_set = false;
                             walkDoc(idoc, lev + 1, s.c_str());
                             xmlFreeDoc(idoc);       // free document
                             xmlpath.clear();
                             xmlpath = PathSplit(path);
                             parsing_flag = save_parse;
+                            in_primary_set = true;
                         }
                     } else {
                         SPRTF("WARNING: Failed to load include file '%s'!\n", s.c_str());
@@ -1311,6 +1317,7 @@ int main( int argc, char **argv )
         return 1;
     }
     bytes_processed += get_last_file_size();
+    in_primary_set = true;
     LIBXML_TEST_VERSION
     doc = xmlReadFile(main_file.c_str(), NULL, options);
     if (doc == NULL) {
