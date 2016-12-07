@@ -101,7 +101,7 @@ static char *suggested_root = 0;
 static bool in_primary_set = true;
 static bool prim_set_desc = false;
 
-static std::string root_path;
+static std::string set_root_path;   // root path of main 'set' file input
 static std::string ac_path;
 static int scanned_count = 0;
 static double bgn_secs;
@@ -111,7 +111,38 @@ static char *last_name = 0; // last name
 static char *active_name = 0; // active name
 // last loaded file components
 static char *last_file = 0;
-static char *last_path = 0;
+static vSTG vlastPaths; // stack of last PATHS of found files
+
+int add2Vector( vSTG &vs, std::string itm )
+{
+    size_t ii, max = vs.size();
+    std::string s;
+    for (ii = 0; ii < max; ii++) {
+        s = vs[ii];
+        if (s == itm)
+            return 0;
+    }
+    vs.push_back(itm);  // add new item
+    return 1;
+}
+
+bool inLastPaths( std::string &tmp, std::string value )
+{
+    size_t ii, max = vlastPaths.size();
+    std::string s;
+    for (ii = 0; ii < max; ii++) {
+        s = vlastPaths[ii];
+        s += PATH_SEP;
+        s += value;
+        ensure_native_sep(s);
+        fix_relative_path(s);
+        if (is_file_or_directory(s.c_str()) == 1) {
+            tmp = s;
+            return true;
+        }
+    }
+    return false;
+}
 
 void set_last_components( std::string &file )
 {
@@ -128,14 +159,7 @@ void set_last_components( std::string &file )
         }
     }
     if (path.size()) {
-        if (last_path) {
-            if (strcmp(last_path,path.c_str())) {
-                free(last_path);
-                last_path = strdup(path.c_str());
-            }
-        } else {
-            last_path = strdup(path.c_str());
-        }
+        add2Vector(vlastPaths,path);
         // get a suggested root
         if (suggested_root == 0) {
             size_t pos = path.find("Aircraft");
@@ -172,6 +196,18 @@ static int parsing_flag = 0;
 #define flg_tag         0x00004000
 #define flg_navdb       0x00008000
 #define flg_minrwy      0x00010000
+// <limits>
+//  <mass-and-balance>
+//   <maximum-ramp-mass-lbs>2407</maximum-ramp-mass-lbs>
+//   <maximum-takeoff-mass-lbs>2400</maximum-takeoff-mass-lbs>
+//   <maximum-landing-mass-lbs>2400</maximum-landing-mass-lbs>
+//  </mass-and-balance>
+// </limits>
+#define flg_limits      0x00020000
+#define flg_mass        0x00040000
+#define flg_maxramp     0x00080000
+#define flg_maxtoff     0x00100000
+#define flg_maxland     0x00200000
 
 typedef struct tagFLGITEMS {
     std::string authors;
@@ -186,6 +222,9 @@ typedef struct tagFLGITEMS {
     std::string aero;
     std::string tags;
     std::string minrwy;
+    std::string maxramp;
+    std::string maxtoff;
+    std::string maxland;
     vSTG acfiles;
 }FLGITEMS, *PFLGITEMS;
 
@@ -212,6 +251,11 @@ static FLG2TXT flg2txt[] = {
     { flg_tag,  "tag" },
     { flg_navdb, "navdb" },
     { flg_minrwy, "min-runway-length-ft" },
+    { flg_limits, "limits" },
+    { flg_mass, "mass-and-balance" },
+    { flg_maxramp, "maximum-ramp-mass-lbs" },
+    { flg_maxtoff, "maximum-takeoff-mass-lbs" },
+    { flg_maxland, "maximum-landing-mass-lbs" },
     //////////////////////////////////////
     // last entry
     { 0, 0 }
@@ -237,6 +281,12 @@ static int simmodpath = flg_path;
 static int simmodpath = (flg_sim | flg_rmodel | flg_path);
 #endif // STRICT_MODEL_PATH y/n
 
+static int limmassramp = (flg_limits | flg_mass | flg_maxramp);
+static int limmasstoff = (flg_limits | flg_mass | flg_maxtoff);
+static int limmassland = (flg_limits | flg_mass | flg_maxland);
+
+
+
 std::string get_flag_name(int flag)
 {
     std::string s;
@@ -249,7 +299,9 @@ std::string get_flag_name(int flag)
         }
         f2t++;
     }
-    if (s.size() == 0)
+    if (flag == 0)
+        s = "none";
+    else if (s.size() == 0)
         s = "unknown";
     return s;
 }
@@ -374,6 +426,23 @@ std::string choose_best_model_file(vSTG &ac)
             }
         }
     }
+    if (pflgitems && pflgitems->aero.size()) {
+        // does the ac file match the 'aero' name
+        // like aero = 777-200
+        // model-file1 = X:\fgdata\Aircraft\777\Models\777-200.ac
+        for (ii = 0; ii < max; ii++) {
+            f = ac[ii];
+            name = get_file_only(f);
+            if (name.size()) {
+                vSTG vsf = FileSplit(name);
+                s = vsf[0];
+                if (s == pflgitems->aero) {
+                    return f;
+                }
+            }
+        }
+    }
+    // TODO: could try even harder...
     s = "";
     return s;
 }
@@ -421,72 +490,116 @@ void show_items_found()
         }
     }
 
+    int itemcnt = 0;
     max = pflgitems->acfiles.size();
     ss << "# " << module << ": Processed the main file '" << main_file << MEOL;
-    ss << "# Items found in scan of " << scanned_count << " xml file(s), " << nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed));
-    ss << " bytes, in " << get_seconds_stg(get_seconds() - bgn_secs) << MEOL;
+    if (VERB5) {
+        ss << "# Items found in scan of " << scanned_count << " xml file(s), " << nice_num(GetNxtBuf(),uint64_to_stg(bytes_processed));
+        ss << " bytes, in " << get_seconds_stg(get_seconds() - bgn_secs) << MEOL;
+    }
     ss << "[model]" << MEOL;
 
-    if (pflgitems->aero.size())
+    if (pflgitems->aero.size()) {
         ss << "aero            = " << pflgitems->aero << MEOL;
-    if (pflgitems->desc.size())
+        itemcnt++;
+    }
+    if (pflgitems->desc.size()) {
         ss << "description     = " << pflgitems->desc << MEOL;
-    if (pflgitems->authors.size())
+        itemcnt++;
+    }
+    if (pflgitems->authors.size()) {
         ss << "authors         = " << pflgitems->authors << MEOL;
-    if (pflgitems->status.size())
+        itemcnt++;
+    }
+    if (pflgitems->status.size()) {
         ss << "status          = " << pflgitems->status << MEOL;
-    if (pflgitems->rFDMr.size())
+        itemcnt++;
+    }
+    if (pflgitems->rFDMr.size()) {
         ss << "rating_FDM      = " << pflgitems->rFDMr << MEOL;
-    if (pflgitems->rsystems.size())
+        itemcnt++;
+    }
+    if (pflgitems->rsystems.size()) {
         ss << "rating_systems  = " << pflgitems->rsystems << MEOL;
-    if (pflgitems->rcockpit.size())
+        itemcnt++;
+    }
+    if (pflgitems->rcockpit.size()) {
         ss << "rating_cockpit  = " << pflgitems->rcockpit << MEOL;
-    if (pflgitems->rmodel.size())
+        itemcnt++;
+    }
+    if (pflgitems->rmodel.size()) {
         ss << "rating_model    = " << pflgitems->rmodel << MEOL;
-    if (pflgitems->avers.size())
+        itemcnt++;
+    }
+    if (pflgitems->avers.size()) {
         ss << "aircraft-version= " << pflgitems->avers << MEOL;
-    if (pflgitems->fmodel.size())
+        itemcnt++;
+    }
+    if (pflgitems->fmodel.size()) {
         ss << "flight-model    = " << pflgitems->fmodel << MEOL;
-    if (pflgitems->tags.size())
+        itemcnt++;
+    }
+    if (pflgitems->tags.size()) {
         ss << "tags            = " << pflgitems->tags << MEOL;
-    if (pflgitems->minrwy.size())
+        itemcnt++;
+    }
+    if (pflgitems->minrwy.size()) {
         ss << "min-runway-ft   = " << pflgitems->minrwy << MEOL;
+        itemcnt++;
+    }
+    if (pflgitems->maxramp.size()) {
+        ss << "max-ramp-lbs    = " << pflgitems->maxramp << MEOL;
+        itemcnt++;
+    }
+    if (pflgitems->maxtoff.size()) {
+        ss << "max-takeoff-lbs = " << pflgitems->maxtoff << MEOL;
+        itemcnt++;
+    }
+    if (pflgitems->maxland.size()) {
+        ss << "max-landing-lbs = " << pflgitems->maxland << MEOL;
+        itemcnt++;
+    }
 
     if (max) {
+        itemcnt++;
         if (max == 1) {
             ss << "model-file      = " << pflgitems->acfiles[0] << MEOL;
         } else {
             s = choose_best_model_file(pflgitems->acfiles);
-            if (s.size())
+            if (s.size()) {
                 ss << "model-file      = " << s << MEOL;
-            ss << "# Got " << max << " 'model' files..." << MEOL;
-            for (ii = 0; ii < max; ii++) {
-                ss << "model-file" << (ii + 1) << " = " << pflgitems->acfiles[ii] << MEOL;
+            }
+            if ((s.size() == 0) || VERB2) {
+                ss << "# Got " << max << " 'model' files..." << MEOL;
+                for (ii = 0; ii < max; ii++) {
+                    ss << "model-file" << (ii + 1) << " = " << pflgitems->acfiles[ii] << MEOL;
+                }
             }
         }
     }
-    if (VERB1) {
-        if (VERB2)
-            SPRTF("\n");
-        direct_out_it((char *)ss.str().c_str());
-    }
-    if (out_file) {
-        FILE *fp = fopen(out_file,"w");
-        if (fp) {
-            size_t res, len = ss.str().size();
-            res = fwrite(ss.str().c_str(),1,len,fp);
-            fclose(fp);
-            if (res == len) {
-                SPRTF("%s: Results witten to file '%s'\n", module, out_file);
+    if (itemcnt) {
+        if (VERB1) {
+            if (VERB2)
+                SPRTF("\n");
+            direct_out_it((char *)ss.str().c_str());
+        }
+        if (out_file) {
+            FILE *fp = fopen(out_file,"w");
+            if (fp) {
+                size_t res, len = ss.str().size();
+                res = fwrite(ss.str().c_str(),1,len,fp);
+                fclose(fp);
+                if (res == len) {
+                    SPRTF("%s: Results witten to file '%s'\n", module, out_file);
+                } else {
+                    SPRTF("WARNING: Write to file '%s' failed! req %d, wrote %d\n", out_file, (int)len, (int)res);
+                }
             } else {
-                SPRTF("WARNING: Write to file '%s' failed! req %d, wrote %d\n", out_file, (int)len, (int)res);
+                SPRTF("WARNING: Unable to Write to file '%s'!\n", out_file);
             }
-        } else {
-            SPRTF("WARNING: Unable to Write to file '%s'!\n", out_file);
         }
-    }
-    if (VERB5) {
-        SPRTF("%s: All output written to '%s'\n", module, get_log_file());
+    } else {
+        SPRTF("%s: No known item found in '%s'\n", filename ); // usr_input
     }
 
     // clean up...
@@ -683,17 +796,11 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                 // can NOT find a file we are interested in, give a warning
                 if (has_file_path((char *)value.c_str())) { // if it has a path
                     // like 'X:\fgdata\..\Models\a320.fuselage.ac'
-                    std::string tmp, tmp2, tmp3;
+                    // 20150621: MUST ALSO USE THE PATH RELATIVE TO THE SET FILE BEING PROCESSES
+                    std::string tmp, tmp2, tmp3, tmp4;
                     if (find_extension(ifile,".ac")) {
                         // is an AC file
-                        if (last_path) {
-                            tmp = last_path;
-                            tmp += PATH_SEP;
-                        }
-                        tmp += value;
-                        ensure_native_sep(tmp);
-                        fix_relative_path(tmp);
-                        if (is_file_or_directory(tmp.c_str()) == 1) {
+                        if (inLastPaths( tmp, value )) {
                             // store this as the .ac file
                             conditional_addition(pflgitems->acfiles,tmp);
                         } else {
@@ -733,17 +840,23 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                         }
                     } else {
                         // is an XML file
-                        if (last_path) {
-                            tmp = last_path;
-                            tmp += PATH_SEP;
-                            tmp += value;
-                            ensure_native_sep(tmp);
-                            fix_relative_path(tmp);
+                        // maybe relative to set file path
+                        if (set_root_path.size()) {
+                            tmp4 = set_root_path;
+                            tmp4 += PATH_SEP;
+                            tmp4 += value;
+                            ensure_native_sep(tmp4);
                             if (is_file_or_directory(tmp.c_str()) == 1) {
                                 mfile = tmp;  // can be processed
                                 iret = 1;
                                 return iret;
                             }
+                        }
+
+                        if (inLastPaths(tmp,value)) {
+                             mfile = tmp;  // can be processed
+                             iret = 1;
+                             return iret;
                         }
                         if (fg_root_path) {
                             tmp2 = fg_root_path;
@@ -806,6 +919,15 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
             }
         }
     }
+    if (GOT_FLG(limmassramp)) {
+        pflgitems->maxramp = value;
+    }
+    if (GOT_FLG(limmasstoff)) {
+        pflgitems->maxtoff = value;
+    }
+    if (GOT_FLG(limmassland)) {
+        pflgitems->maxland = value;
+    }
 
     return iret;
 }
@@ -832,6 +954,8 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
     bool show = true;
     std::string s, path, ifile;
     size_t ii,max;
+    int save_parse;
+
     depth = xmlTextReaderDepth(reader);
     nt = xmlTextReaderNodeType(reader);
     type = getNodeTypeStg(nt);
@@ -904,7 +1028,7 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                             SPRTF(" %s=%s", kid->name, child->content);
                         }
                         if (strcmp((char *)kid->name,"include") == 0) {
-                            ifile = root_path;
+                            ifile = set_root_path;
                             if (ifile.size())
                                 ifile += PATH_SEP;
                             ifile += (char *)child->content;
@@ -963,7 +1087,7 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                             set_last_components(s);
                             //path_stack.push_back(path);
                             xmlpath.clear();
-                            int save_parse = parsing_flag;
+                            save_parse = parsing_flag;
 #ifdef CLEAR_PARSE_FLAG
                             parsing_flag = 0;   // restart parsing flag for new document
 #endif // CLEAR_PARSE_FLAG
@@ -997,10 +1121,17 @@ static void processNode(xmlTextReaderPtr reader, int lev, const char *file)
                         set_last_components(ifile);
                         bytes_processed += get_last_file_size();
                         xmlpath.clear();
+                        save_parse = parsing_flag;
+#ifdef CLEAR_PARSE_FLAG
+                        parsing_flag = 0;   // restart parsing flag for new document
+#endif // CLEAR_PARSE_FLAG
+                        in_primary_set = false;
                         walkDoc(idoc, lev + 1, ifile.c_str());
                         xmlFreeDoc(idoc);       // free document
                         xmlpath.clear();
                         xmlpath = PathSplit(path);
+                        parsing_flag = save_parse;
+                        in_primary_set = true;
                     }
                 } else {
                     SPRTF("WARNING: Failed to load include file '%s'!\n", ifile.c_str());
@@ -1108,7 +1239,7 @@ void set_root_paths( std::string &file)
 {
     std::string s;
     set_full_path(file);
-    root_path = get_path_only(file);
+    set_root_path = get_path_only(file);
     vSTG vs = PathSplit(file);
     size_t ii,max = vs.size();
     if (max > 1) {
@@ -1217,6 +1348,25 @@ int scan_for_log_file( int argc, char **argv )
     return 0;
 }
 
+char *get_full_path( char *file )
+{
+    char *cp = GetNxtBuf();
+    strcpy(cp,file);
+#ifdef _MSC_VER
+    DWORD siz = (DWORD)GetBufSiz();
+    DWORD res = GetFullPathName(file,
+        siz,
+        cp,
+        NULL );
+#else
+    // TODO: Get full path in UNIX
+    char *res = realpath(file,cp);
+    if (!res)
+        strcpy(cp,file);
+#endif
+    return cp;
+}
+
 
 int parse_args( int argc, char **argv )
 {
@@ -1289,7 +1439,7 @@ int parse_args( int argc, char **argv )
                 printf("%s: Unable to 'stat' file '%s'! Aborting...\n", module, arg);
                 return 1;
             }
-            filename = strdup(arg);
+            filename = strdup(get_full_path(arg));
         }
 
     }
