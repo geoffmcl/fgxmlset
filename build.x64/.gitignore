@@ -1,0 +1,17 @@
+*.vcxproj
+*.filters
+*.users
+CMakeCache.txt
+CMakeFiles/*
+Debug/*
+Release/*
+bldlog-1.txt
+cmake_install.cmake
+config.h
+fgxmlset.dir/*
+*.sln
+reader1.dir/*
+util_lib.dir/*
+x64/*
+.vs/*
+*.VC.db
