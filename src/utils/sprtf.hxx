@@ -60,6 +60,7 @@ extern int MCDECL sprtf( const char *pf, ... );
 extern int direct_out_it( char *cp );
 
 extern char *GetNxtBuf();
+extern size_t GetBufSiz();
 
 #define EndBuf(a)   ( a + strlen(a) )
 

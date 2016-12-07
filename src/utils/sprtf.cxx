@@ -58,6 +58,8 @@ char *GetNxtBuf()
    return &_s_strbufs[MX_ONE_BUF * iNextBuf];
 }
 
+size_t GetBufSiz() { return MX_ONE_BUF; }
+
 #define  MXIO     512
 static const char *def_log = "tempfgxml.txt";
 
