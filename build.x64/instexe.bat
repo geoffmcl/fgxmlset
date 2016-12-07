@@ -1,7 +1,7 @@
 @setlocal
 @set TMPFIL=fgxmlset.exe
 @set TMPEXE=Release\%TMPFIL%
-@set TMPTARG=fgxmlset-32.exe
+@set TMPTARG=%TMPFIL%
 @if NOT EXIST %TMPEXE% goto NOEXE
 @set TMPINS=C:\MDOS
 @if NOT EXIST %TMPINS%\nul goto NOINST
