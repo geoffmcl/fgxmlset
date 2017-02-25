@@ -24,13 +24,16 @@
 #endif /* _WIN32 */
 #include <libxml/xmlreader.h>
 #include "gen_utils.hxx"
+#include "sprtf.hxx"
 
 #ifndef SPRTF
 #define SPRTF printf
 #endif
 
-static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
+static const char *filename = "X:\\fgdata\\Aircraft\\c172p\\c172p-set.xml";
+// static const char *filename = "X:\\fgdata\\Aircraft\\777\\777-200-set.xml";
 
+#define DEF_LOG_FILE "temprdr.txt"
 
 #ifdef LIBXML_READER_ENABLED
 
@@ -125,6 +128,9 @@ static int streamFile(const char *filename)
 int main(int argc, char **argv)
 {
     int iret = 0;
+#ifdef _SPRTF_HXX_
+    set_log_file(DEF_LOG_FILE, 0);
+#endif
 
     /*
      * this initialize the library and check potential ABI mismatches
