@@ -113,7 +113,7 @@ vSTG PathSplit( std::string &path )
     result.clear();
     ensure_native_sep(tmp);
     while ( !done ) {
-        pos = tmp.find(s);
+        pos = (int)tmp.find(s);
         if (pos >= 0) {
             result.push_back( tmp.substr(0, pos) );
             tmp = tmp.substr( pos + 1 );
