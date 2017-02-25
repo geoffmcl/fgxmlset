@@ -166,7 +166,7 @@ char * get_log_file( void )
    return logfile;
 }
 
-void   set_log_file( char * nf, bool open )
+void   set_log_file( char * nf, int open )
 {
    if (logfile[0] == 0)
       strcpy(logfile,def_log);

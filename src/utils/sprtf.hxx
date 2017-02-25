@@ -52,7 +52,7 @@ extern int add_sys_date( int val ); // add date/time string
 
 extern int open_log_file( void );
 extern void close_log_file( void );
-extern void set_log_file( char * nf, bool open = true );
+extern void set_log_file( char * nf, int open);
 extern char * get_log_file( void );
 
 extern int MCDECL sprtf( const char *pf, ... );
