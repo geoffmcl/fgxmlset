@@ -481,9 +481,11 @@ void show_items_found()
                 SPRTF("%3d: %s\n", (int)(ii + 1), s.c_str());
             }
         }
+    }
+    if (VERB1) {
         max = loaded_files.size();
         SPRTF("\n");
-        SPRTF("%s: Loaded %d xml files...\n", module, (int)max );
+        SPRTF("%s: Loaded %d xml files...\n", module, (int)max);
         for (ii = 0; ii < max; ii++) {
             s = loaded_files[ii];
             SPRTF("%s\n", s.c_str());
