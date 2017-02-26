@@ -1,6 +1,6 @@
 *.vcxproj
 *.filters
-*.users
+*.user
 CMakeCache.txt
 CMakeFiles/*
 Debug/*
@@ -15,3 +15,4 @@ util_lib.dir/*
 x64/*
 .vs/*
 *.VC.db
+*.opendb
