@@ -17,6 +17,13 @@
 
 :DOCOPY
 @echo.
+@call dirmin %TMPEXE%
+@call dirmin %TMPDST%
+@echo Files different. Will copy %TMPEXE% to %TMPDST%
+@echo.
+@echo *** CONTINUE? *** Only Ctrl+c aborts
+@pause
+@echo.
 @echo Files different. Copying %TMPEXE% to %TMPDST%
 @copy %TMPEXE% %TMPDST%
 @echo.
