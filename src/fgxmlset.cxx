@@ -893,6 +893,8 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
                             }
                         }
                         SPRTF("WARNING: Given path '%s'\nunable to find file '%s'\n", value.c_str(), ifile.c_str());
+                        if (!fg_root_path)
+                            SPRTF("Advice: No FG_ROOT (-r path) given. It may be in there...\n");
                         if (VERB2) {
                             if (tmp.size())
                                 SPRTF("Nor '%s'\n", tmp.c_str());
@@ -921,6 +923,9 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
             }
         }
     }
+
+#if 0 // 0000000000000000000000000000000000000000000000000000
+    // this is CRASHING!!! WHy????????????????
     if (GOT_FLG(limmassramp)) {
         pflgitems->maxramp = value;
     }
@@ -930,6 +935,7 @@ int save_text_per_flag( char *in_value, std::string &mfile, const char *file )
     if (GOT_FLG(limmassland)) {
         pflgitems->maxland = value;
     }
+#endif // 000000000000000000000000000000000000000000000000000
 
     return iret;
 }
@@ -1270,7 +1276,7 @@ void give_help( char *name )
     printf(" --log <file>  (-l) = Set the log file for output.  Use 'none' to disable.\n (def=%s)\n", get_log_file());
     printf(" --out <file>  (-o) = Write results to out file. (def=%s)\n",
         out_file ? out_file : "none");
-    printf(" --root <path> (-r) = Set the 'root' path.\n");
+    printf(" --root <path> (-r) = Set the 'root' ie FG_ROOT path. Specific aircraf xml can refer to common xml.\n");
     printf("\n");
     printf("Will parse the input as a FlightGear 'xxx-set' xml file, and extract information.\n");
     printf("While there is a good attempt to handle a relative file name, it is certainly better\n");
