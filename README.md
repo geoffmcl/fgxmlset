@@ -4,6 +4,8 @@ fgxmlset project
 Description
 -----------
 
+Update: 20170424 - Now replaced with [fgsetxml](https://github.com/geoffmcl/fgsetxml)... using [xmpParse](http://www.applied-mathematics.net/tools/xmlParser.html) library... This project is **depreciated**
+
 This small project was to explore the <a href="http://www.xmlsoft.org/"
 target="_blank">libXml2</a> UI, and building 
 from source requires finding libXml2 in your system.
