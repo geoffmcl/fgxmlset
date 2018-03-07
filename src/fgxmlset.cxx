@@ -1519,6 +1519,10 @@ int main( int argc, char **argv )
 
     show_items_found();
 
+    if (VERB2) {
+        printf("See log file '%s' for details...\n", get_log_file());
+    }
+
     return iret;
 }
 
