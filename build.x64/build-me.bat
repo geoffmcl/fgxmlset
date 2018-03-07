@@ -96,6 +96,10 @@
 @echo.
 @if %ADDINST% EQU 1 goto CHKINST
 @echo At present install disabled! Set ADDINST=1
+@if EXIST instexe.bat (
+@echo There is an instexe.bat, to copy release to C:\MDOS, if changed...
+@echo Note it uses 'fc4.exe' in PATH to compare... see https://github.com/geoffmcl/FC4
+)
 @echo.
 @goto END
 :CHKINST
