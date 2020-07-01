@@ -81,7 +81,7 @@ static void processNode(xmlTextReaderPtr reader)
         att = xmlTextReaderGetAttributeNo(reader,1);
         if (att) {
             //SPRTF(" %s",att);
-            xmlFree((void *)att);
+            //xmlFree((void *)att);
         }
     }
     if (value == NULL)

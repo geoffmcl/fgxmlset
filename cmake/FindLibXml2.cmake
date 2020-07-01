@@ -24,9 +24,9 @@
 
 # use pkg-config to get the directories and then use these values
 # in the find_path() and find_library() calls
-#find_package(PkgConfig QUIET)
-#PKG_CHECK_MODULES(PC_LIBXML QUIET libxml-2.0)
-#set(LIBXML2_DEFINITIONS ${PC_LIBXML_CFLAGS_OTHER})
+find_package(PkgConfig QUIET)
+PKG_CHECK_MODULES(PC_LIBXML QUIET libxml-2.0)
+set(LIBXML2_DEFINITIONS ${PC_LIBXML_CFLAGS_OTHER})
 
 find_path(LIBXML2_INCLUDE_DIR NAMES libxml/xpath.h
    HINTS
@@ -36,12 +36,12 @@ find_path(LIBXML2_INCLUDE_DIR NAMES libxml/xpath.h
    )
 
 if (MSVC)
-    find_library(LIBXML2_LIB_DBG NAMES xml2d libxml2d
+    find_library(LIBXML2_LIB_DBG NAMES libxml2sd libxml2d
        HINTS
        ${PC_LIBXML_LIBDIR}
        ${PC_LIBXML_LIBRARY_DIRS}
        )
-    find_library(LIBXML2_LIB_REL NAMES xml2 libxml2
+    find_library(LIBXML2_LIB_REL NAMES libxml2s libxml2
        HINTS
        ${PC_LIBXML_LIBDIR}
        ${PC_LIBXML_LIBRARY_DIRS}

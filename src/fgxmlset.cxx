@@ -20,7 +20,7 @@
 #endif /* _WIN32 */
 #include <stdint.h>
 #ifdef _MSC_VER
-#include <libxml/libxml.h>
+// #include <libxml/libxml.h>
 #else
 #include <string.h> // for strcmp(), ...
 #include <unistd.h> // getcwd(), ...
@@ -486,9 +486,11 @@ void show_items_found()
         max = loaded_files.size();
         SPRTF("\n");
         SPRTF("%s: Loaded %d xml files...\n", module, (int)max);
-        for (ii = 0; ii < max; ii++) {
-            s = loaded_files[ii];
-            SPRTF("%s\n", s.c_str());
+        if (VERB2) {
+            for (ii = 0; ii < max; ii++) {
+                s = loaded_files[ii];
+                SPRTF("%s\n", s.c_str());
+            }
         }
     }
 
@@ -574,7 +576,8 @@ void show_items_found()
             if ((s.size() == 0) || VERB2) {
                 ss << "# Got " << max << " 'model' files..." << MEOL;
                 for (ii = 0; ii < max; ii++) {
-                    ss << "model-file" << (ii + 1) << " = " << pflgitems->acfiles[ii] << MEOL;
+                    s = pflgitems->acfiles[ii];
+                    ss << "model-file" << (ii + 1) << " = " << s << MEOL;
                 }
             }
         }
@@ -1480,8 +1483,11 @@ int main( int argc, char **argv )
     // test_stg();
     // test_stg_trim();
     int iret = parse_args(argc,argv);
-    if (iret)
+    if (iret) {
+        if (iret == 2)
+            iret = 0;
         return iret;
+    }
     xmlDocPtr doc = NULL;
     bgn_secs = get_seconds();
     // establish the MAIN file

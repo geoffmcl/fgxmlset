@@ -20,4 +20,6 @@ install_manifest.txt
 *.opensdf
 *.suo
 ipch/*
+.vs/*
+x64/*
 

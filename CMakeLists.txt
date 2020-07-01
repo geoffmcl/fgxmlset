@@ -1,6 +1,6 @@
 # fgxmlset project
 # CMakeLists.txt, generated gencmake.pl, on 2014/10/28 18:12:12
-cmake_minimum_required( VERSION 2.8.8 )
+cmake_minimum_required( VERSION 3.6 )
 
 project( fgxmlset )
 
@@ -40,10 +40,8 @@ if(WIN32 AND MSVC)
     # foreach(warning 4244 4251 4267 4275 4290 4786 4305)
     #     set(WARNING_FLAGS "${WARNING_FLAGS} /wd${warning}")
     # endforeach(warning)
-    set( MSVC_FLAGS "-DNOMINMAX -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS -D_SCL_SECURE_NO_WARNINGS -D__CRT_NONSTDC_NO_WARNINGS" )
-    # if (${MSVC_VERSION} EQUAL 1600)
-    #    set( MSVC_LD_FLAGS "/FORCE:MULTIPLE" )
-    # endif (${MSVC_VERSION} EQUAL 1600)
+    # other flags -D_SCL_SECURE_NO_WARNINGS -D__CRT_NONSTDC_NO_WARNINGS
+    set( MSVC_FLAGS "-DNOMINMAX -D_USE_MATH_DEFINES -D_CRT_SECURE_NO_WARNINGS" )
     #set( NOMINMAX 1 )
     set( CMAKE_DEBUG_POSTFIX "d" )
 else()
@@ -62,15 +60,22 @@ set( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MSVC_LD_FLAGS}" )
 #  LIBXML2_VERSION_STRING - the version of LibXml2 found (since CMake 2.8.8)
 find_package( LibXml2 )
 if (LIBXML2_FOUND)
-    message(STATUS "*** LibXML2 found ver ${LIBXML2_VERSION_STRING} lib ${LIBXML2_LIBRARIES} inc ${LIBXML2_INCLUDE_DIR}")
+    message(STATUS "*** LibXML2 found ver ${LIBXML2_VERSION_STRING} lib ${LIBXML2_LIBRARIES}")
+    message(STATUS "*** include_directories( ${LIBXML2_INCLUDE_DIR} )")
     list( APPEND add_LIBS ${LIBXML2_LIBRARIES} )
     include_directories( ${LIBXML2_INCLUDE_DIR} )
     if (LIBXML2_DEFINITIONS) 
         add_definitions( ${LIBXML2_DEFINITIONS} )
         message(STATUS "*** add_definitions( ${LIBXML2_DEFINITIONS} )")
     endif ()
+    string(FIND "${LIBXML2_LIBRARIES}" "libxml2s" GOT_STATIC)
+    if(GOT_STATIC)
+        message(STATUS "*** Found static, setting -DLIBXML_STATIC")
+        add_definitions( -DLIBXML_STATIC )
+    endif()
 else ()
-    message(FATAL_ERROR "*** LibXML2 NOT FOUND!")
+    message(STATUS "*** NOT FOUND LibXML2 ver '${LIBXML2_VERSION_STRING}' lib '${LIBXML2_LIBRARIES}' inc '${LIBXML2_INCLUDE_DIR}'")
+    message(FATAL_ERROR "*** UGH: LibXML2 NOT FOUND!")
 endif ()
 
 #  ZLIB_FOUND          - True if zlib found.
@@ -162,4 +167,3 @@ endif ()
 install( TARGETS ${name} DESTINATION bin )
 
 # eof
-

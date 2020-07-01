@@ -1,7 +1,7 @@
 @setlocal
 @set TMPFIL=fgxmlset.exe
 @set TMPEXE=Release\%TMPFIL%
-@set TMPTARG=fgxmlset-32.exe
+@set TMPTARG=fgxmlset.exe
 @if NOT EXIST %TMPEXE% goto NOEXE
 @set TMPINS=C:\MDOS
 @if NOT EXIST %TMPINS%\nul goto NOINST
@@ -16,6 +16,10 @@
 
 
 :DOCOPY
+@echo.
+@echo Files different. Will copy %TMPEXE% to %TMPDST%
+@echo.
+@pause
 @echo.
 @echo Files different. Copying %TMPEXE% to %TMPDST%
 @copy %TMPEXE% %TMPDST%

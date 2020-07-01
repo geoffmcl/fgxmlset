@@ -1,17 +1,17 @@
 @setlocal
 @set TMPBGN=%TIME%
-@set TMPDRV=F:
-@set TMPRT=%TMPDRV%\FG\18
+@set TMPDRV=D:
+@set TMPRT=%TMPDRV%\UTILS
 @set TMPVER=1
 @set TMPPRJ=fgxmlset
 @set TMPMV=
 @set TMPSRC=%TMPRT%\%TMPPRJ%%TMPMV%
 @set TMPBGN=%TIME%
-@set TMPINS=%TMPRT%\3rdParty
+@set TMPINS=D:\Projects\3rdParty.x64
 @set TMPLOG=bldlog-1.txt
-@set TMPSG=F:\FG\18\install\msvc100\simgear
+@set TMPSG=D:\FG\next\install\msvc140-64
 
-@set TMPOPTS=-DCMAKE_INSTALL_PREFIX=%TMPDRV%\FG\18\3rdParty
+@set TMPOPTS=-DCMAKE_INSTALL_PREFIX=%TMPINS%
 @if EXIST %TMPSG%\nul (
 @set TMPOPTS=%TMPOPTS% -DCMAKE_PREFIX_PATH:PATH=%TMPSG%
 )
@@ -28,25 +28,31 @@
 @goto RPT
 :GOTCMD
 
-@echo Build %DATE% %TIME% > %TMPLOG%
-@echo Build source %TMPSRC%... all output to build log %TMPLOG%
-@echo Build source %TMPSRC%... all output to build log %TMPLOG% >> %TMPLOG%
+@echo Build %TMPPRJ% %DATE% %TIME% in %CD% > %TMPLOG%
+@echo Build source %TMPSRC%... output to %TMPLOG%
+@echo Build source %TMPSRC%... output to %TMPLOG% >> %TMPLOG%
 
 @REM Set any environment variables needed
-@set BOOST_ROOT=%TMPDRV%\FG\18\boost_1_53_0
+@set BOOST_ROOT=C:\Projects\boost_1_72_0
 @echo Set BOOST_ROOT=%BOOST_ROOT% >> %TMPLOG%
 @if NOT EXIST %TMPSG%\nul goto DNSG
 @set SIMGEAR_DIR=%TMPSG%
 @echo Set SIMGEAR_DIR=%SIMGEAR_DIR% >> %TMPLOG%
 :DGSG
 
-cmake %TMPSRC% %TMPOPTS% >> %TMPLOG% 2>&1
+@echo Doing: 'cmake %TMPSRC% %TMPOPTS%'
+@echo Doing: 'cmake %TMPSRC% %TMPOPTS%' >> %TMPLOG%
+@cmake %TMPSRC% %TMPOPTS% >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR1
 
-cmake --build . --config Debug >> %TMPLOG% 2>&1
+@echo Doing 'cmake --build . --config Debug'
+@echo Doing 'cmake --build . --config Debug' >> %TMPLOG%
+@cmake --build . --config Debug >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR2
 
-cmake --build . --config Release >> %TMPLOG% 2>&1
+@echo Doing 'cmake --build . --config Release'
+@echo Doing 'cmake --build . --config Release' >> %TMPLOG%
+@cmake --build . --config Release >> %TMPLOG% 2>&1
 @if ERRORLEVEL 1 goto ERR3
 
 @REM fa4 "TODO" -c %TMPLOG%
