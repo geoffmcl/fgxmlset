@@ -214,8 +214,9 @@ std::string get_file_only( std::string &path )
 static	struct stat _s_buf;
 int is_file_or_directory ( const char * path ) // 1 = file, 2 = dir, 0 = neither
 {
-    if (!path)
+    if (!path) {
         return 0;
+    }
 	if (stat(path,&_s_buf) == 0)
 	{
 		if (_s_buf.st_mode & M_IS_DIR)
